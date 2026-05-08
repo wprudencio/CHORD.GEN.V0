@@ -1944,7 +1944,7 @@ export default function ChordGenerator() {
     <div className="min-h-screen bg-[#0D1117] text-[#E8F0D8] font-[family-name:var(--font-display)] selection:bg-[#C0FC14] selection:text-[#0D1117] cyber-grid-bg">
       <div className="max-w-7xl mx-auto p-1 md:p-4 lg:p-8 min-h-screen flex flex-col">
         {/* Device Frame */}
-        <div className="bg-[#161B22] border border-[#2A2F38] overflow-hidden neon-border">
+        <div className="bg-[#161B22] border border-[#2A2F38] overflow-hidden">
           
           {/* Top Bar — CHORD.GEN + Status + Actions */}
           <div className="bg-[#161B22] cyber-panel px-3 md:px-5 py-2.5 flex items-center justify-between gap-3 border border-[#2A2F38]">
