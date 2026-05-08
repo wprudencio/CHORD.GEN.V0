@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Pencil, X } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   Dialog,
   DialogContent,
@@ -1937,98 +1938,85 @@ export default function ChordGenerator() {
     return () => document.removeEventListener("keydown", handleKeyDown)
   }, [stopPlayback, startPlayback, generateProgression, saveProgression])
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.06 } },
+  }
+  const itemVariants = {
+    hidden: { opacity: 0, y: 16 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
+  }
+
   return (
-    <div className="min-h-screen bg-[#EBEBEB] text-[#111111] font-sans selection:bg-[#F04E23] selection:text-[#111111]">
-      <div className="max-w-7xl mx-auto p-1 md:p-4 lg:p-8 min-h-screen flex flex-col">
-        {/* Device Frame */}
-        <div className="bg-[#F5F5F3] border border-[#CCCCCC] overflow-hidden">
-          
-          {/* Top Bar — CHORD.GEN + Status + Actions */}
-          <div className="bg-[#111111] dark-panel px-2 md:px-4 py-2 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1 md:gap-3 min-w-0">
-              <div className="flex items-baseline gap-1 md:gap-2">
-                <span className="text-base md:text-xl font-[800] tracking-tight text-[#F5F5F3] whitespace-nowrap">CHORD.GEN</span>
-                <span className="brand-stamp text-[9px] md:text-[11px]">v.02</span>
-              </div>
-              <span className="text-[#333] mx-0.5 hidden sm:inline">|</span>
-              <span className={`w-2 h-2 shrink-0 ${isPlaying ? "bg-[#F04E23]" : "bg-[#666]"}`} />
-              <span className="mono-label text-[10px] md:text-[11px] text-[#666] hidden sm:inline">{isPlaying ? "PLAYING" : "STOPPED"}</span>
-              
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/40 selection:text-foreground">
+      <div className="max-w-2xl mx-auto px-4 py-6 md:py-10 flex flex-col gap-6">
+
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-3">
+            <div className="rounded-md bg-primary size-9 flex items-center justify-center">
+              <svg className="size-5 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" strokeLinejoin="miter">
+                <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+              </svg>
             </div>
-            <div className="flex items-center gap-0.5 md:gap-1 shrink-0">
-              <button
-                onClick={exportProgression}
-                className="p-1.5 md:p-2 text-[#F5F5F3] hover:text-[#F04E23] hover:bg-[#1A1A1A] transition-all border border-transparent hover:border-[#F04E23]"
-                title="Copy progression"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-                </svg>
-              </button>
-              <button
-                onClick={saveProgression}
-                className="p-1.5 md:p-2 text-[#F5F5F3] hover:text-[#F04E23] hover:bg-[#1A1A1A] transition-all border border-transparent hover:border-[#F04E23]"
-                title="Save progression"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                  <polyline points="17 21 17 13 7 13 7 21" />
-                  <polyline points="7 3 7 8 15 8" />
-                </svg>
-              </button>
-              <button
-                onClick={exportMidi}
-                className="p-1.5 md:p-2 text-[#F5F5F3] hover:text-[#F04E23] hover:bg-[#1A1A1A] transition-all border border-transparent hover:border-[#F04E23]"
-                title="Export MIDI"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-              </button>
-              <button
-                onClick={resetSettings}
-                className="p-1.5 md:p-2 text-[#F5F5F3] hover:text-[#F04E23] hover:bg-[#1A1A1A] transition-all border border-transparent hover:border-[#F04E23]"
-                title="Reset all settings"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="23 4 23 10 17 10" />
-                  <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
-                </svg>
-              </button>
+            <div>
+              <h1 className="text-2xl font-sans font-bold tracking-tight leading-none">CHORD.OS</h1>
+              <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-widest">Progression Engine</span>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <span className={`w-2.5 h-2.5 rounded-[1.5px] ${isPlaying ? "bg-success animate-pulse" : "bg-muted-foreground/40"}`} />
+            <span className="font-mono text-xs text-muted-foreground uppercase tracking-wide hidden sm:inline">{isPlaying ? "PLAYING" : "STOPPED"}</span>
+          </div>
+        </motion.div>
 
-          {/* Main Display Area */}
-          <div className="bg-[#111111] dark-panel m-1 mt-1 p-2 md:m-3 md:mt-2 md:p-6 border border-[#CCCCCC]">
-
-
-            {/* Chord Display — larger, more prominent */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mb-2 md:mb-4">
+        {/* Chord Display */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="card-shell"
+        >
+          <div className="flex items-center gap-2.5 px-1 pt-1">
+            <span className="bullet" />
+            <span className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">Progression</span>
+            <span className="ml-auto font-mono text-[11px] text-muted-foreground uppercase">{key} {mode}</span>
+          </div>
+          <div className="card-inner">
+            <div className="grid grid-cols-2 gap-2">
               {progression.map((chord, i) => (
-                <button
+                <motion.button
                   key={i}
+                  variants={itemVariants}
                   onClick={() => playChordPreview(i)}
-                  className={`relative p-3 md:p-6 transition-all cursor-pointer text-left border min-h-[80px] md:min-h-0
-                    ${activeChordIndex === i 
-                      ? "bg-[#F04E23] orange-panel text-[#111111] border-[#F04E23]" 
-                      : "bg-[#111111] border-[#1A1A1A] text-[#F5F5F3] hover:border-[#F04E23]"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`relative p-4 md:p-5 rounded-md text-left transition-all border cursor-pointer overflow-hidden
+                    ${activeChordIndex === i
+                      ? "bg-primary text-primary-foreground border-primary animate-active-pulse"
+                      : "bg-secondary/40 border-border hover:border-primary/50"
                     }`}
                 >
-                  <div className="text-2xl md:text-3xl font-[700] tracking-tight">
+                  <div className="text-3xl md:text-4xl font-sans font-bold tracking-tight leading-none">
                     {chord.root}
-                    <span className="text-xs font-normal opacity-70 ml-0.5">{formatChordType(chord.type)}</span>
+                    <span className="text-sm font-mono font-medium opacity-70 ml-1">{formatChordType(chord.type)}</span>
                   </div>
-                  <div className={`mono-label text-[10px] md:text-[12px] mt-0.5 ${activeChordIndex === i ? "text-[#111111]" : "text-[#666]"}`}>
+                  <div className={`font-mono text-[11px] uppercase tracking-wide mt-1.5 ${activeChordIndex === i ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                     {getChordTypeName(chord.type)}
                   </div>
                   {activeChordIndex === i && (
-                    <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#111111]" />
+                    <motion.div
+                      layoutId="active-indicator"
+                      className="absolute top-2 right-2 w-2 h-2 bg-primary-foreground rounded-[1.5px]"
+                    />
                   )}
-                  <div 
-                    className={`absolute top-1 right-5 p-1 transition-colors cursor-pointer z-10 ${activeChordIndex === i ? "text-[#111111] hover:text-[#111111]/70" : "text-[#666] hover:text-[#F04E23]"}`}
+                  <div
+                    className={`absolute top-2 right-6 p-1 transition-colors cursor-pointer z-10 ${activeChordIndex === i ? "text-primary-foreground/60 hover:text-primary-foreground" : "text-muted-foreground hover:text-primary"}`}
                     onClick={(e) => {
                       e.stopPropagation()
                       setEditingChord({ index: i, root: chord.root, type: chord.type })
@@ -2036,429 +2024,357 @@ export default function ChordGenerator() {
                   >
                     <Pencil size={10} />
                   </div>
-                </button>
+                </motion.button>
               ))}
             </div>
+          </div>
+        </motion.div>
 
-            {/* Transport — Play + Generate */}
-            <div className="grid grid-cols-2 gap-1">
-              <button
-                onClick={isPlaying ? stopPlayback : startPlayback}
-                className={`flex items-center justify-center gap-2 py-4 md:py-5 font-[800] uppercase text-sm md:text-lg tracking-widest transition-all border-2 min-h-[48px]
-                  ${isPlaying 
-                    ? "bg-[#F04E23] border-[#F04E23] text-[#111111]" 
-                    : "bg-[#F04E23] border-[#F04E23] text-[#111111]"
+        {/* Transport */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.15 }}
+          className="grid grid-cols-2 gap-3"
+        >
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={isPlaying ? stopPlayback : startPlayback}
+            className={`flex items-center justify-center gap-2.5 py-4 rounded-md font-sans font-bold uppercase text-sm tracking-widest transition-colors border-2
+              ${isPlaying
+                ? "bg-warning text-background border-warning hover:bg-warning/90"
+                : "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
+              }`}
+          >
+            {isPlaying ? (
+              <>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
+                STOP
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                PLAY
+              </>
+            )}
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={generateProgression}
+            className="flex items-center justify-center gap-2.5 py-4 rounded-md bg-success text-background border-2 border-success font-sans font-bold uppercase text-sm tracking-widest hover:bg-success/90 transition-colors"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square" strokeLinejoin="miter">
+              <path d="M23 4v6h-6M1 20v-6h6" />
+              <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+            </svg>
+            GENERATE
+          </motion.button>
+        </motion.div>
+
+        {/* Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.25 }}
+          className="flex items-center gap-2 justify-center"
+        >
+          <button onClick={exportProgression} className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-pop border border-border text-[11px] font-mono uppercase tracking-wide text-muted-foreground hover:text-foreground hover:border-primary/50 transition-all">
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" strokeLinejoin="miter"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
+            Copy
+          </button>
+          <button onClick={saveProgression} className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-pop border border-border text-[11px] font-mono uppercase tracking-wide text-muted-foreground hover:text-foreground hover:border-primary/50 transition-all">
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" strokeLinejoin="miter"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
+            Save
+          </button>
+          <button onClick={exportMidi} className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-pop border border-border text-[11px] font-mono uppercase tracking-wide text-muted-foreground hover:text-foreground hover:border-primary/50 transition-all">
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" strokeLinejoin="miter"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+            Export
+          </button>
+          <button onClick={resetSettings} className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-pop border border-border text-[11px] font-mono uppercase tracking-wide text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-all">
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" strokeLinejoin="miter"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" /></svg>
+            Reset
+          </button>
+        </motion.div>
+
+        {/* Config Cards */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="flex flex-col gap-4"
+        >
+          {/* Chord Config */}
+          <motion.div variants={itemVariants} className="card-shell">
+            <div className="flex items-center gap-2.5 px-1 pt-1">
+              <span className="bullet" />
+              <span className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">Chord Config</span>
+            </div>
+            <div className="card-inner space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">Key</label>
+                  <div className="relative bg-pop rounded-md border border-border overflow-hidden hover:border-primary/40 transition-colors">
+                    <select value={key} onChange={(e) => setKey(e.target.value)} className="w-full bg-transparent px-3 py-2.5 text-sm font-mono font-semibold uppercase cursor-pointer outline-none">
+                      {NOTES.map((n) => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">▼</div>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">Mode</label>
+                  <div className="relative bg-pop rounded-md border border-border overflow-hidden hover:border-primary/40 transition-colors">
+                    <select value={mode} onChange={(e) => setMode(e.target.value)} className="w-full bg-transparent px-3 py-2.5 text-sm font-mono font-semibold uppercase cursor-pointer outline-none">
+                      <option value="major">Major</option><option value="minor">Minor</option><option value="dorian">Dorian</option>
+                      <option value="mixolydian">Mixolydian</option><option value="lydian">Lydian</option><option value="phrygian">Phrygian</option>
+                      <option value="locrian">Locrian</option><option value="aeolian">Aeolian</option><option value="harmonicMinor">Harmonic Min</option>
+                      <option value="melodicMinor">Melodic Min</option><option value="wholeTone">Whole Tone</option><option value="blues">Blues</option>
+                      <option value="pentatonicMajor">Pentatonic Maj</option><option value="pentatonicMinor">Pentatonic Min</option>
+                      <option value="hungarian">Hungarian</option><option value="japanese">Japanese</option><option value="arabian">Arabian</option>
+                      <option value="persian">Persian</option><option value="bebop">Bebop</option><option value="chromatic">Chromatic</option>
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">▼</div>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">Style</label>
+                <div className="relative bg-pop rounded-md border border-border overflow-hidden hover:border-primary/40 transition-colors">
+                  <select value={style} onChange={(e) => setStyle(e.target.value)} className="w-full bg-transparent px-3 py-2.5 text-sm font-mono font-semibold uppercase cursor-pointer outline-none">
+                    <option value="modern">Modern Pop</option><option value="electronic">Electronic</option><option value="ambient">Ambient</option>
+                    <option value="jazzy">Jazz</option><option value="lofi">Lo-Fi</option><option value="cinematic">Cinematic</option>
+                    <option value="rnb">R&B</option><option value="gospel">Gospel</option><option value="funk">Funk</option>
+                    <option value="indie">Indie</option><option value="bossa">Bossa Nova</option><option value="reggaeton">Reggaeton</option>
+                    <option value="country">Country</option><option value="metal">Metal</option><option value="classical">Classical</option>
+                    <option value="disco">Disco</option><option value="synthwave">Synthwave</option><option value="edm">EDM</option>
+                    <option value="latin">Latin</option><option value="afrobeat">Afrobeat</option>
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">▼</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <label className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">BPM</label>
+                  <div className="relative bg-pop rounded-md border border-border overflow-hidden hover:border-primary/40 transition-colors">
+                    <input type="number" value={bpmInput}
+                      onChange={(e) => { setBpmInput(e.target.value); const n = parseInt(e.target.value); if (!isNaN(n) && n >= 1 && n <= 999) setSettings(s => ({...s, bpm: n})) }}
+                      onBlur={() => { const n = parseInt(bpmInput); const c = Math.max(40, Math.min(200, n || 90)); setSettings(s => ({...s, bpm: c})); setBpmInput(c.toString()) }}
+                      min={40} max={200} className="w-full bg-transparent px-3 py-2.5 text-sm font-mono font-semibold text-center outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">Time</label>
+                  <div className="relative bg-pop rounded-md border border-border overflow-hidden hover:border-primary/40 transition-colors">
+                    <select value={settings.timeSignature} onChange={(e) => setSettings(s => ({...s, timeSignature: parseInt(e.target.value)}))} className="w-full bg-transparent px-3 py-2.5 text-sm font-mono font-semibold uppercase cursor-pointer outline-none text-center">
+                      <option value="4">4/4</option><option value="3">3/4</option><option value="6">6/8</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">Bars</label>
+                  <div className="relative bg-pop rounded-md border border-border overflow-hidden hover:border-primary/40 transition-colors">
+                    <select value={settings.barsPerChord} onChange={(e) => setSettings(s => ({...s, barsPerChord: parseInt(e.target.value)}))} className="w-full bg-transparent px-3 py-2.5 text-sm font-mono font-semibold uppercase cursor-pointer outline-none text-center">
+                      <option value="1">1</option><option value="2">2</option><option value="4">4</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Synth Config */}
+          <motion.div variants={itemVariants} className="card-shell">
+            <div className="flex items-center gap-2.5 px-1 pt-1">
+              <span className="bullet" />
+              <span className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">Synth Config</span>
+            </div>
+            <div className="card-inner space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">Oscillator</label>
+                  <div className="relative bg-pop rounded-md border border-border overflow-hidden hover:border-primary/40 transition-colors">
+                    <select value={settings.synthType} onChange={(e) => setSettings(s => ({...s, synthType: e.target.value}))} className="w-full bg-transparent px-3 py-2.5 text-sm font-mono font-semibold uppercase cursor-pointer outline-none">
+                      <option value="pad">Pad</option><option value="pluck">Pluck</option><option value="keys">Keys</option>
+                      <option value="strings">Strings</option><option value="organ">Organ</option><option value="bell">Bell</option>
+                      <option value="bass">Bass</option><option value="lead">Lead</option><option value="brass">Brass</option>
+                      <option value="fm">FM</option><option value="supersaw">SuperSaw</option><option value="wobble">Wobble</option>
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">▼</div>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">Rhythm</label>
+                  <div className="relative bg-pop rounded-md border border-border overflow-hidden hover:border-primary/40 transition-colors">
+                    <select value={settings.synthRhythm} onChange={(e) => setSettings(s => ({...s, synthRhythm: e.target.value}))} className="w-full bg-transparent px-3 py-2.5 text-sm font-mono font-semibold uppercase cursor-pointer outline-none">
+                      {Object.entries(SYNTH_RHYTHMS).map(([k, {name}]) => <option key={k} value={k}>{name}</option>)}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">▼</div>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">Reverb</label>
+                  <span className="font-mono text-[11px] text-primary">{Math.round(settings.reverbAmount * 100)}%</span>
+                </div>
+                <input type="range" min="0" max="100" value={settings.reverbAmount * 100} onChange={(e) => setSettings(s => ({...s, reverbAmount: parseInt(e.target.value) / 100}))} className="w-full" />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">Chord Volume</label>
+                  <span className="font-mono text-[11px] text-primary">{Math.round(settings.chordVolume * 100)}%</span>
+                </div>
+                <input type="range" min="0" max="100" value={settings.chordVolume * 100} onChange={(e) => setSettings(s => ({...s, chordVolume: parseInt(e.target.value) / 100}))} className="w-full" />
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Drum Config */}
+          <motion.div variants={itemVariants} className="card-shell">
+            <div className="flex items-center gap-2.5 px-1 pt-1">
+              <span className="bullet" />
+              <span className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">Drum Config</span>
+              <span className="ml-auto">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded border text-[10px] font-mono font-medium uppercase tracking-wider ${settings.drumsEnabled ? "border-success bg-success/10 text-success" : "border-muted-foreground/30 bg-pop text-muted-foreground"}`}>
+                  {settings.drumsEnabled ? "ON" : "OFF"}
+                </span>
+              </span>
+            </div>
+            <div className="card-inner space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">Pattern</label>
+                  <div className="relative bg-pop rounded-md border border-border overflow-hidden hover:border-primary/40 transition-colors">
+                    <select value={settings.drumStyle} onChange={(e) => setSettings(s => ({...s, drumStyle: e.target.value}))} className="w-full bg-transparent px-3 py-2.5 text-sm font-mono font-semibold uppercase cursor-pointer outline-none">
+                      <option value="basic">Basic</option><option value="basic1">Basic-1</option><option value="basic2">Basic-2</option>
+                      <option value="basic3">Basic-3</option><option value="hiphop">HipHop</option><option value="house">House</option>
+                      <option value="trap">Trap</option><option value="dnb">DnB</option><option value="reggae">Reggae</option>
+                      <option value="shuffle">Shuffle</option><option value="bossa">Bossa</option><option value="reggaeton">Reggaeton</option>
+                      <option value="click">Click</option><option value="none">None</option>
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">▼</div>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">Drum Volume</label>
+                  <div className="relative bg-pop rounded-md border border-border overflow-hidden hover:border-primary/40 transition-colors">
+                    <input type="range" min="0" max="100" value={settings.drumVolume * 100} onChange={(e) => setSettings(s => ({...s, drumVolume: parseInt(e.target.value) / 100}))} className="w-full px-3 py-2.5" />
+                  </div>
+                </div>
+              </div>
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setSettings(s => ({ ...s, drumsEnabled: !s.drumsEnabled }))}
+                className={`w-full py-3 rounded-md font-mono text-xs font-semibold uppercase tracking-widest border-2 transition-all
+                  ${settings.drumsEnabled
+                    ? "bg-success/10 border-success text-success hover:bg-success/20"
+                    : "bg-pop border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
                   }`}
               >
-                {isPlaying ? (
-                  <>
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                      <rect x="6" y="4" width="4" height="16" />
-                      <rect x="14" y="4" width="4" height="16" />
-                    </svg>
-                    STOP
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                    PLAY
-                  </>
-                )}
-              </button>
-              <button
-                onClick={generateProgression}
-                className="flex items-center justify-center gap-2 py-4 md:py-5 bg-[#F04E23] border-2 border-[#F04E23] text-[#111111] font-[800] uppercase text-sm md:text-lg tracking-widest transition-all hover:bg-[#d04010] min-h-[48px]"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M23 4v6h-6M1 20v-6h6" />
-                  <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-                </svg>
-                GENERATE
-              </button>
+                {settings.drumsEnabled ? "Disable Drums" : "Enable Drums"}
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
+        </motion.div>
 
-          {/* Controls Section — Boxed Panels */}
-          <div className="p-3 pt-2 space-y-3">
-
-            {/* PANEL: CHORD CONFIG */}
-            <div className="border-2 border-[#CCCCCC] bg-[#F5F5F3]">
-              <div className="flex items-center gap-2 px-4 py-2 bg-[#EBEBEB] border-b-2 border-[#CCCCCC]">
-                <span className="w-2 h-2 bg-[#F04E23]" />
-                <span className="mono-label text-[14px] text-[#111111] font-[700] tracking-wider">CHORD CONFIG</span>
-                <span className="slash-divider text-[#666]">////</span>
-                <span className="mono-label text-[11px] text-[#666] uppercase hidden sm:inline">Key &middot; Mode &middot; Style &middot; Meter</span>
+        {/* Saved Progressions */}
+        <AnimatePresence>
+          {savedProgressions.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="card-shell overflow-hidden"
+            >
+              <div className="flex items-center gap-2.5 px-1 pt-1">
+                <span className="bullet bullet-warning" />
+                <span className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">Saved</span>
+                <span className="ml-auto font-mono text-[11px] text-muted-foreground">{savedProgressions.length}</span>
               </div>
-              <div className="p-1 md:p-3">
-                <div className="hidden md:grid grid-cols-6 gap-2 mb-1 mono-label text-[12px] text-[#666] px-0.5">
-                  <span>KEY</span>
-                  <span>MODE</span>
-                  <span>STYLE</span>
-                  <span>BPM</span>
-                  <span>TIME</span>
-                  <span>BARS</span>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-1 md:gap-2">
-                  <div className="flex flex-col gap-1">
-                    <span className="mono-label text-[10px] md:hidden text-[#666] px-0.5">KEY</span>
-                    <div className="ctrl-wrapper">
-                      <select
-                        value={key}
-                        onChange={(e) => setKey(e.target.value)}
-                        className="ctrl-select"
-                      >
-                        {NOTES.map((n) => (
-                          <option key={n} value={n}>{n}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="mono-label text-[10px] md:hidden text-[#666] px-0.5">MODE</span>
-                    <div className="ctrl-wrapper">
-                      <select
-                        value={mode}
-                        onChange={(e) => setMode(e.target.value)}
-                        className="ctrl-select"
-                      >
-                        <option value="major">Maj</option>
-                        <option value="minor">Min</option>
-                        <option value="dorian">Dor</option>
-                        <option value="mixolydian">Mix</option>
-                        <option value="lydian">Lyd</option>
-                        <option value="phrygian">Phr</option>
-                        <option value="locrian">Loc</option>
-                        <option value="aeolian">Aeo</option>
-                        <option value="harmonicMinor">Hrm</option>
-                        <option value="melodicMinor">Mel</option>
-                        <option value="wholeTone">Whl</option>
-                        <option value="blues">Blu</option>
-                        <option value="pentatonicMajor">Pn+</option>
-                        <option value="pentatonicMinor">Pn-</option>
-                        <option value="hungarian">Hun</option>
-                        <option value="japanese">Jpn</option>
-                        <option value="arabian">Arb</option>
-                        <option value="persian">Per</option>
-                        <option value="bebop">Bop</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="mono-label text-[10px] md:hidden text-[#666] px-0.5">STYLE</span>
-                    <div className="ctrl-wrapper">
-                      <select
-                        value={style}
-                        onChange={(e) => setStyle(e.target.value)}
-                        className="ctrl-select"
-                      >
-                        <option value="modern">Pop</option>
-                        <option value="electronic">Elec</option>
-                        <option value="ambient">Amb</option>
-                        <option value="jazzy">Jazz</option>
-                        <option value="lofi">Lofi</option>
-                        <option value="cinematic">Cine</option>
-                        <option value="rnb">R&amp;B</option>
-                        <option value="gospel">Gosp</option>
-                        <option value="funk">Funk</option>
-                        <option value="indie">Indi</option>
-                        <option value="bossa">Boss</option>
-                        <option value="reggaeton">Regt</option>
-                        <option value="country">Ctry</option>
-                        <option value="metal">Metl</option>
-                        <option value="classical">Clsc</option>
-                        <option value="disco">Disc</option>
-                        <option value="synthwave">Synw</option>
-                        <option value="edm">EDM</option>
-                        <option value="latin">Latn</option>
-                        <option value="afrobeat">Afro</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="mono-label text-[10px] md:hidden text-[#666] px-0.5">BPM</span>
-                    <div className="ctrl-wrapper">
-                      <input
-                        type="number"
-                        value={bpmInput}
-                        onChange={(e) => {
-                          const val = e.target.value
-                          setBpmInput(val)
-                          const num = parseInt(val)
-                          if (!isNaN(num)) {
-                            if (num >= 1 && num <= 999) {
-                              setSettings((s) => ({ ...s, bpm: num }))
-                            }
-                          }
-                        }}
-                        onBlur={() => {
-                          const num = parseInt(bpmInput)
-                          const clamped = Math.max(40, Math.min(200, num || 90))
-                          setSettings((s) => ({ ...s, bpm: clamped }))
-                          setBpmInput(clamped.toString())
-                        }}
-                        min={40}
-                        max={200}
-                        className="ctrl-input"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="mono-label text-[10px] md:hidden text-[#666] px-0.5">TIME</span>
-                    <div className="ctrl-wrapper">
-                      <select
-                        value={settings.timeSignature}
-                        onChange={(e) => setSettings((s) => ({ ...s, timeSignature: parseInt(e.target.value) }))}
-                        className="ctrl-select"
-                      >
-                        <option value="4">4/4</option>
-                        <option value="3">3/4</option>
-                        <option value="6">6/8</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="mono-label text-[10px] md:hidden text-[#666] px-0.5">BARS</span>
-                    <div className="ctrl-wrapper">
-                      <select
-                        value={settings.barsPerChord}
-                        onChange={(e) => setSettings((s) => ({ ...s, barsPerChord: parseInt(e.target.value) }))}
-                        className="ctrl-select"
-                      >
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="4">4</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* PANEL: SYNTH CONFIG */}
-            <div className="border-2 border-[#CCCCCC] bg-[#F5F5F3]">
-              <div className="flex items-center gap-2 px-4 py-2 bg-[#EBEBEB] border-b-2 border-[#CCCCCC]">
-                <span className="w-2 h-2 bg-[#F04E23]" />
-                <span className="mono-label text-[14px] text-[#111111] font-[700] tracking-wider">SYNTH CONFIG</span>
-                <span className="slash-divider text-[#666]">////</span>
-                <span className="mono-label text-[11px] text-[#666] uppercase hidden sm:inline">Osc &middot; Pattern &middot; Reverb &middot; Level</span>
-              </div>
-              <div className="p-1 md:p-3">
-                <div className="hidden md:grid grid-cols-4 gap-2 mb-1 mono-label text-[12px] text-[#666] px-0.5">
-                  <span>SYNTH</span>
-                  <span>RHYTHM</span>
-                  <span>REVERB</span>
-                  <span>CH VOL</span>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-2">
-                  <div className="flex flex-col gap-1">
-                    <span className="mono-label text-[10px] md:hidden text-[#666] px-0.5">SYNTH</span>
-                    <div className="ctrl-wrapper">
-                      <select
-                        value={settings.synthType}
-                        onChange={(e) => setSettings((s) => ({ ...s, synthType: e.target.value }))}
-                        className="ctrl-select"
-                      >
-                        <option value="pad">Pad</option>
-                        <option value="pluck">Pluck</option>
-                        <option value="keys">Keys</option>
-                        <option value="strings">Strng</option>
-                        <option value="organ">Organ</option>
-                        <option value="bell">Bell</option>
-                        <option value="bass">Bass</option>
-                        <option value="lead">Lead</option>
-                        <option value="brass">Brass</option>
-                        <option value="fm">FM</option>
-                        <option value="supersaw">Super</option>
-                        <option value="wobble">Wobb</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="mono-label text-[10px] md:hidden text-[#666] px-0.5">RHYTHM</span>
-                    <div className="ctrl-wrapper">
-                      <select
-                        value={settings.synthRhythm}
-                        onChange={(e) => setSettings((s) => ({ ...s, synthRhythm: e.target.value }))}
-                        className="ctrl-select"
-                      >
-                        {Object.entries(SYNTH_RHYTHMS).map(([k, { name }]) => (
-                          <option key={k} value={k}>{name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="mono-label text-[10px] md:hidden text-[#666] px-0.5">REVERB</span>
-                    <div className="ctrl-range-wrapper">
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={settings.reverbAmount * 100}
-                        onChange={(e) => setSettings((s) => ({ ...s, reverbAmount: parseInt(e.target.value) / 100 }))}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="mono-label text-[10px] md:hidden text-[#666] px-0.5">CH VOL</span>
-                    <div className="ctrl-range-wrapper">
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={settings.chordVolume * 100}
-                        onChange={(e) => setSettings((s) => ({ ...s, chordVolume: parseInt(e.target.value) / 100 }))}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* PANEL: DRUM CONFIG */}
-            <div className="border-2 border-[#CCCCCC] bg-[#F5F5F3]">
-              <div className="flex items-center gap-2 px-4 py-2 bg-[#EBEBEB] border-b-2 border-[#CCCCCC]">
-                <span className="w-2 h-2 bg-[#F04E23]" />
-                <span className="mono-label text-[14px] text-[#111111] font-[700] tracking-wider">DRUM CONFIG</span>
-                <span className="slash-divider text-[#666]">////</span>
-                <span className="mono-label text-[11px] text-[#666] uppercase hidden sm:inline">Pattern &middot; Level &middot; Toggle</span>
-              </div>
-              <div className="p-1 md:p-3">
-                <div className="hidden md:grid grid-cols-3 gap-2 mb-1 mono-label text-[12px] text-[#666] px-0.5">
-                  <span>STYLE</span>
-                  <span>VOLUME</span>
-                  <span>ENABLE</span>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-1 md:gap-2">
-                  <div className="flex flex-col gap-1">
-                    <span className="mono-label text-[10px] md:hidden text-[#666] px-0.5">STYLE</span>
-                    <div className="ctrl-wrapper">
-                      <select
-                        value={settings.drumStyle}
-                        onChange={(e) => setSettings((s) => ({ ...s, drumStyle: e.target.value }))}
-                        className="ctrl-select"
-                      >
-                        <option value="basic">Basic</option>
-                        <option value="basic1">Basic-1</option>
-                        <option value="basic2">Basic-2</option>
-                        <option value="basic3">Basic-3</option>
-                        <option value="hiphop">HpHop</option>
-                        <option value="house">House</option>
-                        <option value="trap">Trap</option>
-                        <option value="dnb">DnB</option>
-                        <option value="reggae">Regg</option>
-                        <option value="shuffle">Shuf</option>
-                        <option value="bossa">Bossa</option>
-                        <option value="reggaeton">Rgtn</option>
-                        <option value="click">Click</option>
-                        <option value="none">None</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="mono-label text-[10px] md:hidden text-[#666] px-0.5">VOLUME</span>
-                    <div className="ctrl-range-wrapper">
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={settings.drumVolume * 100}
-                        onChange={(e) => setSettings((s) => ({ ...s, drumVolume: parseInt(e.target.value) / 100 }))}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="mono-label text-[10px] md:hidden text-[#666] px-0.5">ENABLE</span>
-                    <button
-                      onClick={() => setSettings((s) => ({ ...s, drumsEnabled: !s.drumsEnabled }))}
-                      className={`ctrl-toggle ${settings.drumsEnabled ? 'active' : 'inactive'}`}
-                    >
-                      DRUMS {settings.drumsEnabled ? "ON" : "OFF"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-
-
-            {/* Saved Progressions */}
-            {savedProgressions.length > 0 && (
-              <div className="pt-1 md:pt-2 border-t border-[#CCCCCC]">
-                <div className="mono-label text-[12px] text-[#666] mb-1.5">SAVED ///</div>
-                <div className="flex flex-col md:flex-row flex-wrap gap-1">
+              <div className="card-inner space-y-2">
+                <AnimatePresence mode="popLayout">
                   {savedProgressions.map((saved, i) => (
-                    <div key={i} className="group relative flex items-center">
+                    <motion.div
+                      key={i}
+                      layout
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="flex items-center gap-2 group"
+                    >
                       <button
                         onClick={() => loadProgression(saved)}
-                        className="w-full md:w-auto bg-white border border-[#CCCCCC] pl-3 pr-8 py-2 mono-label text-[12px] hover:border-[#F04E23] transition-colors text-left"
+                        className="flex-1 text-left px-3 py-2.5 rounded-md bg-pop border border-border font-mono text-xs uppercase tracking-wide hover:border-primary/50 transition-colors"
                       >
-                        {saved.chords.map((c) => c.name).join(" ")}
+                        {saved.chords.map((c) => c.name).join(" — ")}
                       </button>
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          deleteSavedProgression(i)
-                        }}
-                        className="absolute right-1 p-0.5 text-[#666] hover:text-[#F04E23] transition-colors"
+                        onClick={() => deleteSavedProgression(i)}
+                        className="shrink-0 p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                       >
-                        <X size={8} />
+                        <X size={14} />
                       </button>
-                    </div>
+                    </motion.div>
                   ))}
-                </div>
+                </AnimatePresence>
               </div>
-            )}
-          </div>
-          {/* Footer */}
-          <div className="bg-[#111111] dark-panel px-2 md:px-6 py-2 md:py-3 text-center mono-label text-[12px] text-[#666]">
-            SPACE = PLAY/STOP / S = SAVE
-          </div>
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Footer */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="text-center py-2"
+        >
+          <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">
+            Space = Play/Stop · R = Regen · S = Save
+          </span>
+        </motion.div>
       </div>
 
+      {/* Edit Dialog */}
       <Dialog open={!!editingChord} onOpenChange={(open) => !open && setEditingChord(null)}>
-        <DialogContent className="bg-[#111111] border-[#CCCCCC] text-[#F5F5F3] max-w-[90vw] md:max-w-lg">
+        <DialogContent className="bg-card border-border text-foreground max-w-[90vw] md:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-[#F04E23] mono-label">EDIT CHORD</DialogTitle>
+            <DialogTitle className="flex items-center gap-2.5 text-primary font-mono text-sm uppercase tracking-widest">
+              <span className="bullet" />
+              Edit Chord
+            </DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4 font-mono">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="mono-label text-[14px] text-[#666] mb-2 block">ROOT NOTE</label>
-                <select
-                  className="w-full bg-[#1A1A1A] border border-[#666] px-4 py-3 text-base font-[700] focus:outline-none focus:border-[#F04E23] text-[#F5F5F3] appearance-none font-mono min-h-[44px]"
-                  value={editingChord?.root}
-                  onChange={(e) => setEditingChord(prev => prev ? { ...prev, root: e.target.value } : null)}
-                >
-                  {NOTES.map(note => (
-                    <option key={note} value={note}>{note}</option>
-                  ))}
-                </select>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">Root Note</label>
+                <div className="relative bg-pop rounded-md border border-border overflow-hidden">
+                  <select value={editingChord?.root} onChange={(e) => setEditingChord(prev => prev ? { ...prev, root: e.target.value } : null)} className="w-full bg-transparent px-3 py-3 text-sm font-mono font-semibold uppercase cursor-pointer outline-none">
+                    {NOTES.map(note => <option key={note} value={note}>{note}</option>)}
+                  </select>
+                </div>
               </div>
-              <div>
-                <label className="mono-label text-[14px] text-[#666] mb-2 block">CHORD TYPE</label>
-                <select
-                  className="w-full bg-[#1A1A1A] border border-[#666] px-4 py-3 text-base font-[700] focus:outline-none focus:border-[#F04E23] text-[#F5F5F3] appearance-none font-mono min-h-[44px]"
-                  value={editingChord?.type}
-                  onChange={(e) => setEditingChord(prev => prev ? { ...prev, type: e.target.value } : null)}
-                >
-                  {Object.keys(CHORD_TYPES).map(type => (
-                    <option key={type} value={type}>{getChordTypeName(type)}</option>
-                  ))}
-                </select>
+              <div className="space-y-1.5">
+                <label className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">Chord Type</label>
+                <div className="relative bg-pop rounded-md border border-border overflow-hidden">
+                  <select value={editingChord?.type} onChange={(e) => setEditingChord(prev => prev ? { ...prev, type: e.target.value } : null)} className="w-full bg-transparent px-3 py-3 text-sm font-mono font-semibold uppercase cursor-pointer outline-none">
+                    {Object.keys(CHORD_TYPES).map(type => <option key={type} value={type}>{getChordTypeName(type)}</option>)}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
           <DialogFooter className="sm:justify-start">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => editingChord && updateChord(editingChord.index, editingChord.root, editingChord.type)}
-              className="w-full bg-[#F04E23] orange-panel text-[#111111] py-3 font-[700] uppercase text-sm tracking-widest transition-all min-h-[44px]"
+              className="w-full py-3 rounded-md bg-primary text-primary-foreground font-mono text-xs font-semibold uppercase tracking-widest hover:bg-primary/90 transition-colors"
             >
-              UPDATE CHORD
-            </button>
+              Update Chord
+            </motion.button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
