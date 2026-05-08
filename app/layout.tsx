@@ -1,17 +1,17 @@
 import type { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/next'
-import { Orbitron, JetBrains_Mono } from 'next/font/google'
+import { Chakra_Petch, Share_Tech_Mono } from 'next/font/google'
 import './globals.css'
 
-const orbitron = Orbitron({
+const chakraPetch = Chakra_Petch({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800', '900'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-display',
 })
 
-const jetbrainsMono = JetBrains_Mono({
+const shareTechMono = Share_Tech_Mono({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+  weight: ['400'],
   variable: '--font-mono',
 })
 
@@ -44,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${orbitron.variable} ${jetbrainsMono.variable} dark`}>
+    <html lang="en" className={`${chakraPetch.variable} ${shareTechMono.variable} dark`}>
       <body>
         {children}
         <Analytics />

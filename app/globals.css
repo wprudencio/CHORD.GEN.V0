@@ -85,8 +85,8 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-display), 'Orbitron', sans-serif;
-  --font-mono: var(--font-mono), 'JetBrains Mono', monospace;
+  --font-sans: var(--font-display), 'Chakra Petch', sans-serif;
+  --font-mono: var(--font-mono), 'Share Tech Mono', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -189,17 +189,17 @@
    ============================================================ */
 
 .cyber-display {
-  font-family: var(--font-display), 'Orbitron', sans-serif;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-family: var(--font-display), 'Chakra Petch', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .cyber-mono {
-  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), 'Share Tech Mono', monospace;
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.15em;
+  font-weight: 400;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
@@ -251,7 +251,7 @@
   -webkit-appearance: none; appearance: none;
   width: 100%; background: transparent; border: none;
   padding: 10px 28px 10px 10px;
-  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), 'Share Tech Mono', monospace;
   font-size: 13px; font-weight: 700;
   color: var(--text-primary);
   text-align: center; text-transform: uppercase;
@@ -259,7 +259,7 @@
   line-height: 1.3; border-radius: 0; min-height: 44px;
 }
 .ctrl-select option {
-  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), 'Share Tech Mono', monospace;
   font-size: 13px; font-weight: 600;
   text-transform: uppercase;
   background: var(--base-panel);
@@ -287,7 +287,7 @@
   -webkit-appearance: none; appearance: none; -moz-appearance: textfield;
   width: 100%; background: transparent; border: none;
   padding: 10px 8px;
-  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), 'Share Tech Mono', monospace;
   font-size: 13px; font-weight: 700;
   color: var(--text-primary);
   text-align: center; outline: none;
@@ -336,7 +336,7 @@ input[type="range"]::-moz-range-thumb {
    ============================================================ */
 
 .ctrl-toggle {
-  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), 'Share Tech Mono', monospace;
   font-size: 13px; font-weight: 700;
   letter-spacing: 0.12em; text-transform: uppercase;
   text-align: center;
@@ -426,7 +426,7 @@ input[type="range"]::-moz-range-thumb {
   background: var(--base-card);
   border: 1px solid var(--base-border);
   padding: 8px 28px 8px 12px;
-  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), 'Share Tech Mono', monospace;
   font-size: 12px; font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--text-secondary);
@@ -474,7 +474,7 @@ button { border-radius: 0; transition: all 150ms ease; }
   display: inline-flex; align-items: center; gap: 6px;
   background: var(--neon-green);
   color: var(--base-bg);
-  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), 'Share Tech Mono', monospace;
   font-size: 10px; font-weight: 700;
   letter-spacing: 0.12em; text-transform: uppercase;
   padding: 4px 10px; line-height: 1;
