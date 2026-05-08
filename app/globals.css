@@ -81,8 +81,8 @@
 }
 
 @theme inline {
-  --font-sans: 'Space Grotesk', 'Arial Black', Impact, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'Courier Prime', monospace;
+  --font-sans: var(--font-sans), 'Arial Black', Impact, sans-serif;
+  --font-mono: var(--font-mono), 'Courier Prime', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -233,8 +233,8 @@ h1, h2, h3 {
   text-align: left;
 }
 
-/* The dropdown arrow - consistent across all selects */
-.ctrl-wrapper::after {
+/* The dropdown arrow - only on select wrappers */
+.ctrl-wrapper:has(.ctrl-select)::after {
   content: '';
   position: absolute;
   right: 11px;
@@ -248,7 +248,7 @@ h1, h2, h3 {
   pointer-events: none;
   transition: border-top-color 150ms ease;
 }
-.ctrl-wrapper:focus-within::after {
+.ctrl-wrapper:has(.ctrl-select):focus-within::after {
   border-top-color: var(--color-orange);
 }
 
@@ -367,17 +367,50 @@ input[type="range"]::-moz-range-thumb {
    ============================================================ */
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #EBEBEB;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #CCCCCC;
+  background: #999999;
+  border-radius: 0;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #F04E23;
+  background: var(--color-orange);
+}
+
+/* ============================================================
+   FOCUS VISIBLE
+   ============================================================ */
+
+*:focus-visible {
+  outline: 2px solid var(--color-orange);
+  outline-offset: -2px;
+}
+
+/* ============================================================
+   TRANSPORT BUTTON PRESS
+   ============================================================ */
+
+.transport-btn {
+  position: relative;
+  overflow: hidden;
+}
+.transport-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.08);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+.transport-btn:hover::after {
+  opacity: 1;
+}
+.transport-btn:active {
+  transform: translateY(1px);
 }
 
 /* ============================================================
@@ -387,6 +420,68 @@ input[type="range"]::-moz-range-thumb {
 button {
   border-radius: 0;
   transition: all 150ms ease;
+}
+
+/* ============================================================
+   ACTIVE CHORD GLOW
+   ============================================================ */
+
+@keyframes chord-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(240, 78, 35, 0.35); }
+  50% { box-shadow: 0 0 0 4px rgba(240, 78, 35, 0.15); }
+}
+
+.chord-active {
+  animation: chord-pulse 2s ease-in-out infinite;
+}
+
+/* ============================================================
+   SCANLINES OVERLAY
+   ============================================================ */
+
+.scanlines {
+  position: relative;
+}
+.scanlines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ============================================================
+   SAVED PROGRESSION CHIP
+   ============================================================ */
+
+.saved-chip {
+  position: relative;
+  background: white;
+  border: 1px solid #CCCCCC;
+  padding: 8px 28px 8px 12px;
+  font-family: var(--font-mono), 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #111111;
+  cursor: pointer;
+  transition: all 150ms ease;
+  text-align: left;
+  line-height: 1.4;
+}
+.saved-chip:hover {
+  border-color: var(--color-orange);
+  background: #fff8f6;
+}
+.saved-chip:active {
+  transform: translateY(1px);
 }
 
 /* ============================================================

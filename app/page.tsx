@@ -1944,18 +1944,19 @@ export default function ChordGenerator() {
         <div className="bg-[#F5F5F3] border border-[#CCCCCC] overflow-hidden">
           
           {/* Top Bar — CHORD.GEN + Status + Actions */}
-          <div className="bg-[#111111] dark-panel px-2 md:px-4 py-2 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1 md:gap-3 min-w-0">
-              <div className="flex items-baseline gap-1 md:gap-2">
+          <div className="bg-[#111111] dark-panel px-3 md:px-5 py-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 md:gap-4 min-w-0">
+              <div className="flex items-baseline gap-1.5 md:gap-2">
                 <span className="text-base md:text-xl font-[800] tracking-tight text-[#F5F5F3] whitespace-nowrap">CHORD.GEN</span>
                 <span className="brand-stamp text-[9px] md:text-[11px]">v.02</span>
               </div>
               <span className="text-[#333] mx-0.5 hidden sm:inline">|</span>
-              <span className={`w-2 h-2 shrink-0 ${isPlaying ? "bg-[#F04E23]" : "bg-[#666]"}`} />
-              <span className="mono-label text-[10px] md:text-[11px] text-[#666] hidden sm:inline">{isPlaying ? "PLAYING" : "STOPPED"}</span>
-              
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 shrink-0 ${isPlaying ? "bg-[#F04E23] animate-pulse" : "bg-[#444]"}`} />
+                <span className="mono-label text-[10px] md:text-[11px] text-[#666] hidden sm:inline">{isPlaying ? "PLAYING" : "STOPPED"}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-0.5 md:gap-1 shrink-0">
+            <div className="flex items-center gap-1 md:gap-1.5 shrink-0">
               <button
                 onClick={exportProgression}
                 className="p-1.5 md:p-2 text-[#F5F5F3] hover:text-[#F04E23] hover:bg-[#1A1A1A] transition-all border border-transparent hover:border-[#F04E23]"
@@ -2002,33 +2003,31 @@ export default function ChordGenerator() {
           </div>
 
           {/* Main Display Area */}
-          <div className="bg-[#111111] dark-panel m-1 mt-1 p-2 md:m-3 md:mt-2 md:p-6 border border-[#CCCCCC]">
-
-
+          <div className="bg-[#111111] dark-panel m-2 md:m-4 md:mt-3 p-3 md:p-6 border border-[#333] scanlines">
             {/* Chord Display — larger, more prominent */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mb-2 md:mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 mb-3 md:mb-5">
               {progression.map((chord, i) => (
                 <button
                   key={i}
                   onClick={() => playChordPreview(i)}
-                  className={`relative p-3 md:p-6 transition-all cursor-pointer text-left border min-h-[80px] md:min-h-0
+                  className={`relative p-4 md:p-6 transition-all duration-200 cursor-pointer text-left border min-h-[88px] md:min-h-[120px] group
                     ${activeChordIndex === i 
-                      ? "bg-[#F04E23] orange-panel text-[#111111] border-[#F04E23]" 
-                      : "bg-[#111111] border-[#1A1A1A] text-[#F5F5F3] hover:border-[#F04E23]"
+                      ? "bg-[#F04E23] orange-panel text-[#111111] border-[#F04E23] chord-active" 
+                      : "bg-[#111111] border-[#222] text-[#F5F5F3] hover:border-[#F04E23]/60 hover:bg-[#161616]"
                     }`}
                 >
-                  <div className="text-2xl md:text-3xl font-[700] tracking-tight">
+                  <div className="text-2xl md:text-4xl font-[700] tracking-tight leading-none">
                     {chord.root}
-                    <span className="text-xs font-normal opacity-70 ml-0.5">{formatChordType(chord.type)}</span>
+                    <span className="text-sm md:text-base font-normal opacity-70 ml-1 align-top">{formatChordType(chord.type)}</span>
                   </div>
-                  <div className={`mono-label text-[10px] md:text-[12px] mt-0.5 ${activeChordIndex === i ? "text-[#111111]" : "text-[#666]"}`}>
+                  <div className={`mono-label text-[10px] md:text-[11px] mt-2 ${activeChordIndex === i ? "text-[#111111]/70" : "text-[#555] group-hover:text-[#888]"}`}>
                     {getChordTypeName(chord.type)}
                   </div>
                   {activeChordIndex === i && (
-                    <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#111111]" />
+                    <div className="absolute top-2 right-2 w-2 h-2 bg-[#111111]" />
                   )}
                   <div 
-                    className={`absolute top-1 right-5 p-1 transition-colors cursor-pointer z-10 ${activeChordIndex === i ? "text-[#111111] hover:text-[#111111]/70" : "text-[#666] hover:text-[#F04E23]"}`}
+                    className={`absolute top-2 right-6 p-1 transition-colors cursor-pointer z-10 opacity-0 group-hover:opacity-100 ${activeChordIndex === i ? "text-[#111111] hover:text-[#111111]/60" : "text-[#666] hover:text-[#F04E23]"}`}
                     onClick={(e) => {
                       e.stopPropagation()
                       setEditingChord({ index: i, root: chord.root, type: chord.type })
@@ -2041,12 +2040,12 @@ export default function ChordGenerator() {
             </div>
 
             {/* Transport — Play + Generate */}
-            <div className="grid grid-cols-2 gap-1">
+            <div className="grid grid-cols-2 gap-1.5">
               <button
                 onClick={isPlaying ? stopPlayback : startPlayback}
-                className={`flex items-center justify-center gap-2 py-4 md:py-5 font-[800] uppercase text-sm md:text-lg tracking-widest transition-all border-2 min-h-[48px]
+                className={`transport-btn flex items-center justify-center gap-2.5 py-4 md:py-5 font-[800] uppercase text-sm md:text-lg tracking-widest transition-all border-2 min-h-[52px]
                   ${isPlaying 
-                    ? "bg-[#F04E23] border-[#F04E23] text-[#111111]" 
+                    ? "bg-[#C93D18] border-[#C93D18] text-[#111111]" 
                     : "bg-[#F04E23] border-[#F04E23] text-[#111111]"
                   }`}
               >
@@ -2069,7 +2068,7 @@ export default function ChordGenerator() {
               </button>
               <button
                 onClick={generateProgression}
-                className="flex items-center justify-center gap-2 py-4 md:py-5 bg-[#F04E23] border-2 border-[#F04E23] text-[#111111] font-[800] uppercase text-sm md:text-lg tracking-widest transition-all hover:bg-[#d04010] min-h-[48px]"
+                className="transport-btn flex items-center justify-center gap-2.5 py-4 md:py-5 bg-[#F04E23] border-2 border-[#F04E23] text-[#111111] font-[800] uppercase text-sm md:text-lg tracking-widest transition-all min-h-[52px]"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M23 4v6h-6M1 20v-6h6" />
@@ -2085,14 +2084,14 @@ export default function ChordGenerator() {
 
             {/* PANEL: CHORD CONFIG */}
             <div className="border-2 border-[#CCCCCC] bg-[#F5F5F3]">
-              <div className="flex items-center gap-2 px-4 py-2 bg-[#EBEBEB] border-b-2 border-[#CCCCCC]">
-                <span className="w-2 h-2 bg-[#F04E23]" />
-                <span className="mono-label text-[14px] text-[#111111] font-[700] tracking-wider">CHORD CONFIG</span>
-                <span className="slash-divider text-[#666]">////</span>
-                <span className="mono-label text-[11px] text-[#666] uppercase hidden sm:inline">Key &middot; Mode &middot; Style &middot; Meter</span>
+              <div className="flex items-center gap-2.5 px-4 py-2.5 bg-[#EBEBEB] border-b-2 border-[#CCCCCC]">
+                <span className="w-2 h-2 bg-[#F04E23] shrink-0" />
+                <span className="mono-label text-[13px] text-[#111111] font-[700] tracking-wider">CHORD CONFIG</span>
+                <span className="slash-divider text-[#999]">////</span>
+                <span className="mono-label text-[11px] text-[#888] uppercase hidden sm:inline">Key &middot; Mode &middot; Style &middot; Meter</span>
               </div>
-              <div className="p-1 md:p-3">
-                <div className="hidden md:grid grid-cols-6 gap-2 mb-1 mono-label text-[12px] text-[#666] px-0.5">
+              <div className="p-2 md:p-3">
+                <div className="hidden md:grid grid-cols-6 gap-2 mb-2 mono-label text-[11px] text-[#888] px-0.5">
                   <span>KEY</span>
                   <span>MODE</span>
                   <span>STYLE</span>
@@ -2100,7 +2099,7 @@ export default function ChordGenerator() {
                   <span>TIME</span>
                   <span>BARS</span>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-1 md:gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
                   <div className="flex flex-col gap-1">
                     <span className="mono-label text-[10px] md:hidden text-[#666] px-0.5">KEY</span>
                     <div className="ctrl-wrapper">
@@ -2238,20 +2237,20 @@ export default function ChordGenerator() {
 
             {/* PANEL: SYNTH CONFIG */}
             <div className="border-2 border-[#CCCCCC] bg-[#F5F5F3]">
-              <div className="flex items-center gap-2 px-4 py-2 bg-[#EBEBEB] border-b-2 border-[#CCCCCC]">
-                <span className="w-2 h-2 bg-[#F04E23]" />
-                <span className="mono-label text-[14px] text-[#111111] font-[700] tracking-wider">SYNTH CONFIG</span>
-                <span className="slash-divider text-[#666]">////</span>
-                <span className="mono-label text-[11px] text-[#666] uppercase hidden sm:inline">Osc &middot; Pattern &middot; Reverb &middot; Level</span>
+              <div className="flex items-center gap-2.5 px-4 py-2.5 bg-[#EBEBEB] border-b-2 border-[#CCCCCC]">
+                <span className="w-2 h-2 bg-[#F04E23] shrink-0" />
+                <span className="mono-label text-[13px] text-[#111111] font-[700] tracking-wider">SYNTH CONFIG</span>
+                <span className="slash-divider text-[#999]">////</span>
+                <span className="mono-label text-[11px] text-[#888] uppercase hidden sm:inline">Osc &middot; Pattern &middot; Reverb &middot; Level</span>
               </div>
-              <div className="p-1 md:p-3">
-                <div className="hidden md:grid grid-cols-4 gap-2 mb-1 mono-label text-[12px] text-[#666] px-0.5">
+              <div className="p-2 md:p-3">
+                <div className="hidden md:grid grid-cols-4 gap-2 mb-2 mono-label text-[11px] text-[#888] px-0.5">
                   <span>SYNTH</span>
                   <span>RHYTHM</span>
                   <span>REVERB</span>
                   <span>CH VOL</span>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div className="flex flex-col gap-1">
                     <span className="mono-label text-[10px] md:hidden text-[#666] px-0.5">SYNTH</span>
                     <div className="ctrl-wrapper">
@@ -2319,19 +2318,19 @@ export default function ChordGenerator() {
 
             {/* PANEL: DRUM CONFIG */}
             <div className="border-2 border-[#CCCCCC] bg-[#F5F5F3]">
-              <div className="flex items-center gap-2 px-4 py-2 bg-[#EBEBEB] border-b-2 border-[#CCCCCC]">
-                <span className="w-2 h-2 bg-[#F04E23]" />
-                <span className="mono-label text-[14px] text-[#111111] font-[700] tracking-wider">DRUM CONFIG</span>
-                <span className="slash-divider text-[#666]">////</span>
-                <span className="mono-label text-[11px] text-[#666] uppercase hidden sm:inline">Pattern &middot; Level &middot; Toggle</span>
+              <div className="flex items-center gap-2.5 px-4 py-2.5 bg-[#EBEBEB] border-b-2 border-[#CCCCCC]">
+                <span className="w-2 h-2 bg-[#F04E23] shrink-0" />
+                <span className="mono-label text-[13px] text-[#111111] font-[700] tracking-wider">DRUM CONFIG</span>
+                <span className="slash-divider text-[#999]">////</span>
+                <span className="mono-label text-[11px] text-[#888] uppercase hidden sm:inline">Pattern &middot; Level &middot; Toggle</span>
               </div>
-              <div className="p-1 md:p-3">
-                <div className="hidden md:grid grid-cols-3 gap-2 mb-1 mono-label text-[12px] text-[#666] px-0.5">
+              <div className="p-2 md:p-3">
+                <div className="hidden md:grid grid-cols-3 gap-2 mb-2 mono-label text-[11px] text-[#888] px-0.5">
                   <span>STYLE</span>
                   <span>VOLUME</span>
                   <span>ENABLE</span>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-1 md:gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   <div className="flex flex-col gap-1">
                     <span className="mono-label text-[10px] md:hidden text-[#666] px-0.5">STYLE</span>
                     <div className="ctrl-wrapper">
@@ -2386,25 +2385,28 @@ export default function ChordGenerator() {
 
             {/* Saved Progressions */}
             {savedProgressions.length > 0 && (
-              <div className="pt-1 md:pt-2 border-t border-[#CCCCCC]">
-                <div className="mono-label text-[12px] text-[#666] mb-1.5">SAVED ///</div>
-                <div className="flex flex-col md:flex-row flex-wrap gap-1">
+              <div className="pt-3 md:pt-4 border-t-2 border-[#CCCCCC]">
+                <div className="flex items-center gap-2 mb-2.5">
+                  <span className="w-1.5 h-1.5 bg-[#F04E23]" />
+                  <span className="mono-label text-[12px] text-[#666]">SAVED PROGRESSIONS</span>
+                </div>
+                <div className="flex flex-col md:flex-row flex-wrap gap-2">
                   {savedProgressions.map((saved, i) => (
-                    <div key={i} className="group relative flex items-center">
+                    <div key={i} className="group relative flex items-stretch">
                       <button
                         onClick={() => loadProgression(saved)}
-                        className="w-full md:w-auto bg-white border border-[#CCCCCC] pl-3 pr-8 py-2 mono-label text-[12px] hover:border-[#F04E23] transition-colors text-left"
+                        className="saved-chip w-full md:w-auto"
                       >
-                        {saved.chords.map((c) => c.name).join(" ")}
+                        {saved.chords.map((c) => c.name).join("  ")}
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           deleteSavedProgression(i)
                         }}
-                        className="absolute right-1 p-0.5 text-[#666] hover:text-[#F04E23] transition-colors"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#999] hover:text-[#F04E23] transition-colors"
                       >
-                        <X size={8} />
+                        <X size={10} />
                       </button>
                     </div>
                   ))}
@@ -2413,8 +2415,18 @@ export default function ChordGenerator() {
             )}
           </div>
           {/* Footer */}
-          <div className="bg-[#111111] dark-panel px-2 md:px-6 py-2 md:py-3 text-center mono-label text-[12px] text-[#666]">
-            SPACE = PLAY/STOP / S = SAVE
+          <div className="bg-[#111111] dark-panel px-3 md:px-6 py-2.5 md:py-3 flex items-center justify-center gap-3 mono-label text-[11px] text-[#555]">
+            <span className="hidden sm:inline">SPACE</span>
+            <span className="text-[#333] hidden sm:inline">=</span>
+            <span>PLAY / STOP</span>
+            <span className="text-[#333]">/</span>
+            <span className="hidden sm:inline">R</span>
+            <span className="text-[#333] hidden sm:inline">=</span>
+            <span className="hidden sm:inline">REGEN</span>
+            <span className="text-[#333] hidden sm:inline">/</span>
+            <span className="hidden sm:inline">S</span>
+            <span className="text-[#333] hidden sm:inline">=</span>
+            <span>SAVE</span>
           </div>
         </div>
       </div>
