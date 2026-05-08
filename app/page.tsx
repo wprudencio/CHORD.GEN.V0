@@ -1663,7 +1663,8 @@ export default function ChordGenerator() {
       if (!isPlayingRef.current) return
 
       const beatsPerBar = settingsRef.current.timeSignature
-      const stepsPerBar = beatsPerBar * 4
+      // 6/8 is compound meter: 6 eighth notes = 12 sixteenths per bar
+      const stepsPerBar = beatsPerBar === 6 ? 12 : beatsPerBar * 4
       const totalSteps = stepsPerBar * settingsRef.current.barsPerChord
 
       const drumPatterns = DRUM_STYLE_PATTERNS[settingsRef.current.drumStyle] || DRUM_STYLE_PATTERNS.basic
@@ -1709,7 +1710,9 @@ export default function ChordGenerator() {
       // For sustained, play at beginning of chord only
       if (settingsRef.current.synthRhythm === "sustained") {
         if (chordStepInBar === 0) {
-          const chordDuration = (60 / settingsRef.current.bpm) * beatsPerBar * settingsRef.current.barsPerChord
+          // 6/8 bar = 3 quarter-note beats worth of time
+          const quarterNotesPerBar = beatsPerBar === 6 ? 3 : beatsPerBar
+          const chordDuration = (60 / settingsRef.current.bpm) * quarterNotesPerBar * settingsRef.current.barsPerChord
           playChord(chord.frequencies, time, chordDuration)
         }
       } else if (synthRhythm.isArp) {
