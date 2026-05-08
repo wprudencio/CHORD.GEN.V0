@@ -1,23 +1,21 @@
 import type { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/next'
-import { Space_Grotesk, IBM_Plex_Mono } from 'next/font/google'
+import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 
-const spaceGrotesk = Space_Grotesk({
+const geistSans = Geist({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-sans',
+  variable: '--font-geist-sans',
 })
 
-const ibmPlexMono = IBM_Plex_Mono({
+const geistMono = Geist_Mono({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-mono',
+  variable: '--font-geist-mono',
 })
 
 export const metadata: Metadata = {
-  title: 'CHORD.GEN /// PROGRESSION COMPOSER',
-  description: '128 chord progression generator — hybrid instrument / terminal workstation',
+  title: 'Chord.Gen — Progression Composer',
+  description: 'AI-powered chord progression generator with real-time synthesis',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -44,11 +42,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${ibmPlexMono.variable}`}>
-      <body>
-        {children}
-        <Analytics />
-      </body>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className="font-sans antialiased">{children}</body>
+      <Analytics />
     </html>
   )
 }

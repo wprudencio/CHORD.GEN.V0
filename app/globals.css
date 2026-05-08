@@ -4,85 +4,50 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Brand Colors */
-  --color-orange: #F04E23;
-  --color-orange-dark: #C93D18;
-  --color-orange-light: #FF6B3D;
+  /* Factory.ai Orange Accent */
+  --accent-100: #ef6f2e;
+  --accent-200: #ee6018;
+  --accent-300: #d15010;
 
-  /* Light Mode Neutrals */
-  --background: #EBEBEB;
-  --foreground: #111111;
-  --card: #F5F5F3;
-  --card-foreground: #111111;
-  --popover: #F5F5F3;
-  --popover-foreground: #111111;
-  --primary: #111111;
-  --primary-foreground: #F5F5F3;
-  --secondary: #F5F5F3;
-  --secondary-foreground: #111111;
-  --muted: #F5F5F3;
-  --muted-foreground: #666666;
-  --accent: #F04E23;
-  --accent-foreground: #111111;
-  --destructive: #F04E23;
-  --destructive-foreground: #111111;
-  --border: #CCCCCC;
-  --input: #CCCCCC;
-  --ring: #F04E23;
-  --chart-1: #F04E23;
-  --chart-2: #111111;
-  --chart-3: #666666;
-  --chart-4: #F04E23;
-  --chart-5: #111111;
-  --radius: 0px;
-  --sidebar: #F5F5F3;
-  --sidebar-foreground: #111111;
-  --sidebar-primary: #111111;
-  --sidebar-primary-foreground: #F5F5F3;
-  --sidebar-accent: #F04E23;
-  --sidebar-accent-foreground: #111111;
-  --sidebar-border: #CCCCCC;
-  --sidebar-ring: #F04E23;
-}
+  /* Light warm gray theme (not super dark) */
+  --background: #f0eeec;
+  --foreground: #1f1d1c;
+  --card: #ffffff;
+  --card-foreground: #1f1d1c;
+  --popover: #ffffff;
+  --popover-foreground: #1f1d1c;
+  --primary: #1f1d1c;
+  --primary-foreground: #f5f5f3;
+  --secondary: #f5f5f3;
+  --secondary-foreground: #1f1d1c;
+  --muted: #f5f5f3;
+  --muted-foreground: #8a8380;
+  --accent: #ef6f2e;
+  --accent-foreground: #ffffff;
+  --destructive: #d15010;
+  --destructive-foreground: #ffffff;
+  --border: #e5e2e0;
+  --input: #e5e2e0;
+  --ring: #ef6f2e;
 
-.dark {
-  --background: #111111;
-  --foreground: #F5F5F3;
-  --card: #111111;
-  --card-foreground: #F5F5F3;
-  --popover: #111111;
-  --popover-foreground: #F5F5F3;
-  --primary: #F5F5F3;
-  --primary-foreground: #111111;
-  --secondary: #1A1A1A;
-  --secondary-foreground: #F5F5F3;
-  --muted: #1A1A1A;
-  --muted-foreground: #666666;
-  --accent: #F04E23;
-  --accent-foreground: #111111;
-  --destructive: #F04E23;
-  --destructive-foreground: #111111;
-  --border: #1A1A1A;
-  --input: #1A1A1A;
-  --ring: #F04E23;
-  --chart-1: #F04E23;
-  --chart-2: #666666;
-  --chart-3: #1A1A1A;
-  --chart-4: #F04E23;
-  --chart-5: #666666;
-  --sidebar: #111111;
-  --sidebar-foreground: #F5F5F3;
-  --sidebar-primary: #F04E23;
-  --sidebar-primary-foreground: #111111;
-  --sidebar-accent: #F04E23;
-  --sidebar-accent-foreground: #111111;
-  --sidebar-border: #1A1A1A;
-  --sidebar-ring: #F04E23;
+  /* Neutral gray scale */
+  --neutral-100: #d6d3d2;
+  --neutral-200: #ccc9c7;
+  --neutral-300: #b8b3b0;
+  --neutral-400: #a49d9a;
+  --neutral-500: #8a8380;
+  --neutral-600: #5c5855;
+  --neutral-700: #4d4947;
+  --neutral-800: #3d3a39;
+  --neutral-900: #2e2c2b;
+  --neutral-1000: #1f1d1c;
+
+  --radius: 0.625rem;
 }
 
 @theme inline {
-  --font-sans: 'Space Grotesk', 'Arial Black', Impact, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'Courier Prime', monospace;
+  --font-sans: var(--font-geist-sans), 'Geist', sans-serif;
+  --font-mono: var(--font-geist-mono), 'Geist Mono', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -102,255 +67,10 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 0px);
-  --radius-md: calc(var(--radius) - 0px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 0px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-}
-
-/* ============================================================
-   PANEL TEXTURES
-   ============================================================ */
-
-/* Grid overlay pattern for orange panels */
-.orange-panel {
-  background-color: var(--color-orange);
-  background-image:
-    repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0px, transparent 1px, transparent 28px),
-    repeating-linear-gradient(90deg, rgba(0,0,0,0.12) 0px, transparent 1px, transparent 28px);
-}
-
-/* Grid overlay for dark panels */
-.dark-panel {
-  background-color: #111111;
-  background-image:
-    repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, transparent 1px, transparent 28px),
-    repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, transparent 1px, transparent 28px);
-}
-
-/* Brand stamp badge */
-.brand-stamp {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--color-orange);
-  color: #111111;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  line-height: 1;
-}
-
-/* Slash divider */
-.slash-divider {
-  color: #F04E23;
-  font-weight: 700;
-  margin: 0 4px;
-}
-
-/* ============================================================
-   TYPOGRAPHY
-   ============================================================ */
-
-h1, h2, h3 {
-  font-family: 'Space Grotesk', 'Arial Black', Impact, sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-/* Mono label style */
-.mono-label {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-}
-
-/* Orange accent text */
-.orange-accent {
-  color: #F04E23;
-}
-
-/* ============================================================
-   UNIFIED FORM CONTROL STYLING
-   ============================================================ */
-
-/* Shared control wrapper - provides the border frame */
-.ctrl-wrapper {
-  background: white;
-  border: 1px solid #CCCCCC;
-  position: relative;
-  transition: border-color 150ms ease;
-}
-.ctrl-wrapper:focus-within {
-  border-color: var(--color-orange);
-}
-
-/* Unified native select - same size everywhere */
-.ctrl-select {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  background: transparent;
-  border: none;
-  padding: 10px 28px 10px 10px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 13px;
-  font-weight: 700;
-  color: #111111;
-  text-align: center;
-  text-transform: uppercase;
-  cursor: pointer;
-  outline: none;
-  line-height: 1.3;
-  border-radius: 0;
-  min-height: 44px; /* touch target */
-}
-.ctrl-select option {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  background: white;
-  color: #111111;
-  text-align: left;
-}
-
-/* The dropdown arrow - consistent across all selects */
-.ctrl-wrapper::after {
-  content: '';
-  position: absolute;
-  right: 11px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 6px solid #666666;
-  pointer-events: none;
-  transition: border-top-color 150ms ease;
-}
-.ctrl-wrapper:focus-within::after {
-  border-top-color: var(--color-orange);
-}
-
-/* Unified number input */
-.ctrl-input {
-  -webkit-appearance: none;
-  appearance: none;
-  -moz-appearance: textfield;
-  width: 100%;
-  background: transparent;
-  border: none;
-  padding: 10px 8px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 13px;
-  font-weight: 700;
-  color: #111111;
-  text-align: center;
-  outline: none;
-  line-height: 1.3;
-  border-radius: 0;
-  min-height: 44px;
-}
-.ctrl-input::-webkit-inner-spin-button,
-.ctrl-input::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-/* Range slider inside control wrapper */
-.ctrl-range-wrapper {
-  background: white;
-  border: 1px solid #CCCCCC;
-  padding: 13px 12px;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.ctrl-range-wrapper input[type="range"] {
-  flex: 1;
-  min-width: 0;
-}
-
-/* ============================================================
-   RANGE INPUT STYLING
-   ============================================================ */
-
-input[type="range"] {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 6px;
-  background: #CCCCCC;
-  border-radius: 0;
-  outline: none;
-  cursor: pointer;
-}
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  background: #F04E23;
-  cursor: pointer;
-  border: none;
-  border-radius: 0;
-}
-input[type="range"]::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  background: #F04E23;
-  cursor: pointer;
-  border: none;
-  border-radius: 0;
-}
-
-/* ============================================================
-   TOGGLE BUTTONS (DRUMS ON/OFF etc)
-   ============================================================ */
-
-.ctrl-toggle {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  text-align: center;
-  padding: 10px 16px;
-  min-height: 44px;
-  border: 1px solid #CCCCCC;
-  cursor: pointer;
-  transition: all 150ms ease;
-  width: 100%;
-}
-.ctrl-toggle.active {
-  background: #111111;
-  color: #F5F5F3;
-  border-color: #111111;
-}
-.ctrl-toggle.inactive {
-  background: white;
-  color: #666666;
-  border-color: #CCCCCC;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 8px);
 }
 
 @layer base {
@@ -362,48 +82,206 @@ input[type="range"]::-moz-range-thumb {
   }
 }
 
-/* ============================================================
-   SCROLLBAR
-   ============================================================ */
+/* ===== ANIMATIONS ===== */
 
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  0% { opacity: 0; transform: scale(0.96); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(239, 111, 46, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 111, 46, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 111, 46, 0); }
+}
+
+@keyframes slideInRight {
+  0% { opacity: 0; transform: translateX(20px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.4s ease-out forwards;
+}
+
+/* Stagger delays */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+.delay-700 { animation-delay: 700ms; }
+
+/* ===== LINK UNDERLINE EFFECT ===== */
+.link-underline {
+  position: relative;
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  transition: color 200ms;
+}
+.link-underline:hover {
+  color: #ef6f2e;
+}
+.link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  height: 1px;
+  width: 0;
+  background-color: currentColor;
+  transition: width 300ms ease-in-out;
+}
+.link-underline:hover::after {
+  width: 100%;
+}
+
+/* ===== FORM CONTROLS ===== */
+.ctrl-select {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 10px 28px 10px 12px;
+  font-family: var(--font-geist-mono), 'Geist Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f1d1c;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  line-height: 1.3;
+  border-radius: 0;
+}
+.ctrl-select option {
+  font-family: var(--font-geist-mono), 'Geist Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  background: #ffffff;
+  color: #1f1d1c;
+}
+
+.ctrl-input {
+  -webkit-appearance: none;
+  appearance: none;
+  -moz-appearance: textfield;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 10px 12px;
+  font-family: var(--font-geist-mono), 'Geist Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f1d1c;
+  text-align: left;
+  outline: none;
+  line-height: 1.3;
+}
+.ctrl-input::-webkit-inner-spin-button,
+.ctrl-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #e5e2e0;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  width: 100%;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #ef6f2e;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  transition: transform 150ms ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #ef6f2e;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+/* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #EBEBEB;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #CCCCCC;
+  background: #ccc9c7;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #F04E23;
+  background: #ef6f2e;
 }
 
-/* ============================================================
-   BUTTON BASE
-   ============================================================ */
-
-button {
-  border-radius: 0;
-  transition: all 150ms ease;
+/* ===== SHIMMER EFFECT ===== */
+.shimmer-bg {
+  background: linear-gradient(90deg, transparent 0%, rgba(239,111,46,0.06) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
 }
 
-/* ============================================================
-   MOBILE RESPONSIVE ADJUSTMENTS
-   ============================================================ */
-
-@media (max-width: 767px) {
-  .ctrl-select {
-    font-size: 12px;
-    padding: 12px 24px 12px 8px;
-  }
-  .ctrl-input {
-    font-size: 12px;
-    padding: 12px 6px;
-  }
-  .ctrl-toggle {
-    font-size: 12px;
-    padding: 12px 12px;
-  }
+/* ===== BADGE ===== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 0.375rem;
+  border: 1px solid #e5e2e0;
+  background: #ffffff;
+  padding: 4px 10px;
+  font-family: var(--font-geist-mono), 'Geist Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  color: #8a8380;
+}
+.badge-accent {
+  border-color: #d15010;
+  background: #d15010;
+  color: #ffffff;
 }
