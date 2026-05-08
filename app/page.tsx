@@ -1776,6 +1776,12 @@ export default function ChordGenerator() {
     setProgression(newProgression)
     progressionRef.current = newProgression
 
+    // Auto-save to history
+    setSavedProgressions((prev) => {
+      const name = `${key} ${mode} - ${new Date().toLocaleTimeString()}`
+      return [...prev, { name, key, mode, chords: newProgression }]
+    })
+
     if (isPlayingRef.current) {
       currentChordIndexRef.current = 0
       currentBeatRef.current = 0
@@ -1866,9 +1872,11 @@ export default function ChordGenerator() {
     setSavedProgressions((prev) => [...prev, { name, key, mode, chords: progression }])
   }, [progression, key, mode])
 
-  const loadProgression = useCallback((saved: { chords: Chord[] }) => {
+  const loadProgression = useCallback((saved: { name: string; key: string; mode: string; chords: Chord[] }) => {
     setProgression(saved.chords)
     progressionRef.current = saved.chords
+    setKey(saved.key)
+    setMode(saved.mode)
   }, [])
 
   const deleteSavedProgression = useCallback((index: number) => {
@@ -2387,24 +2395,27 @@ export default function ChordGenerator() {
             {/* Saved Progressions */}
             {savedProgressions.length > 0 && (
               <div className="pt-1 md:pt-2 border-t border-[#CCCCCC]">
-                <div className="mono-label text-[12px] text-[#666] mb-1.5">SAVED ///</div>
-                <div className="flex flex-col md:flex-row flex-wrap gap-1">
+                <div className="mono-label text-[12px] text-[#666] mb-1.5">HISTORY ///</div>
+                <div className="flex flex-col gap-1">
                   {savedProgressions.map((saved, i) => (
-                    <div key={i} className="group relative flex items-center">
+                    <div key={i} className="group relative flex items-center bg-white border border-[#CCCCCC] hover:border-[#F04E23] transition-colors">
                       <button
                         onClick={() => loadProgression(saved)}
-                        className="w-full md:w-auto bg-white border border-[#CCCCCC] pl-3 pr-8 py-2 mono-label text-[12px] hover:border-[#F04E23] transition-colors text-left"
+                        className="flex-1 text-left pl-3 pr-8 py-2 min-w-0"
                       >
-                        {saved.chords.map((c) => c.name).join(" ")}
+                        <span className="mono-label text-[10px] text-[#666]">{saved.key} {saved.mode}</span>
+                        <span className="block text-[12px] font-[700] font-mono text-[#111111] truncate mt-0.5">
+                          {saved.chords.map((c) => c.name).join(" ")}
+                        </span>
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           deleteSavedProgression(i)
                         }}
-                        className="absolute right-1 p-0.5 text-[#666] hover:text-[#F04E23] transition-colors"
+                        className="absolute right-1 p-1 text-[#666] hover:text-[#F04E23] transition-colors"
                       >
-                        <X size={8} />
+                        <X size={12} />
                       </button>
                     </div>
                   ))}
