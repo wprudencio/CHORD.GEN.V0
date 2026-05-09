@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Pencil, X } from "lucide-react"
+import { Pencil, X, Plus, Trash2, GripVertical } from "lucide-react"
 import ThemeToggle from "./components/ThemeToggle"
 import {
   Dialog,
@@ -758,6 +758,21 @@ function getChordTypeName(type: string): string {
     "7b9": "7 Flat 9",
   }
   return names[type] || type
+}
+
+const CHORD_COLOR_CYCLE = [
+  { active: "bg-[#C0FC14] text-[#0D1117] border-[#C0FC14] chord-active-green shadow-[0_0_20px_rgba(192,252,20,0.3)]", inactive: "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#C0FC14]/80 hover:shadow-[0_0_12px_rgba(192,252,20,0.15)]" },
+  { active: "bg-[#FF2D7C] text-[#0D1117] border-[#FF2D7C] chord-active-pink shadow-[0_0_20px_rgba(255,45,124,0.3)]", inactive: "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#FF2D7C]/80 hover:shadow-[0_0_12px_rgba(255,45,124,0.15)]" },
+  { active: "bg-[#2B7FFF] text-[#0D1117] border-[#2B7FFF] chord-active-blue shadow-[0_0_20px_rgba(43,127,255,0.3)]", inactive: "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#2B7FFF]/80 hover:shadow-[0_0_12px_rgba(43,127,255,0.15)]" },
+  { active: "bg-[#FCEB14] text-[#0D1117] border-[#FCEB14] chord-active-yellow shadow-[0_0_20px_rgba(252,235,20,0.3)]", inactive: "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#FCEB14]/80 hover:shadow-[0_0_12px_rgba(252,235,20,0.15)]" },
+  { active: "bg-[#FF6B2B] text-[#0D1117] border-[#FF6B2B] chord-active-orange shadow-[0_0_20px_rgba(255,107,43,0.3)]", inactive: "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#FF6B2B]/80 hover:shadow-[0_0_12px_rgba(255,107,43,0.15)]" },
+  { active: "bg-[#B829FF] text-[#0D1117] border-[#B829FF] chord-active-purple shadow-[0_0_20px_rgba(184,41,255,0.3)]", inactive: "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#B829FF]/80 hover:shadow-[0_0_12px_rgba(184,41,255,0.15)]" },
+  { active: "bg-[#14FCEB] text-[#0D1117] border-[#14FCEB] chord-active-cyan shadow-[0_0_20px_rgba(20,252,235,0.3)]", inactive: "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#14FCEB]/80 hover:shadow-[0_0_12px_rgba(20,252,235,0.15)]" },
+]
+
+function getChordColorClasses(index: number, isActive: boolean): string {
+  const c = CHORD_COLOR_CYCLE[index % CHORD_COLOR_CYCLE.length]
+  return isActive ? c.active : c.inactive
 }
 
 function getScaleNotes(rootNote: string, mode: string): string[] {
@@ -1767,15 +1782,20 @@ export default function ChordGenerator() {
     const selectedProg = progressions[Math.floor(Math.random() * progressions.length)]
     const scaleNotes = getScaleNotes(key, mode)
 
-    const newProgression = selectedProg.map((chord) => {
-      const rootNote = scaleNotes[(chord.deg - 1) % scaleNotes.length]
-      return {
+    const targetLength = Math.max(1, progressionRef.current.length || 4)
+
+    const newProgression: Chord[] = []
+    for (let i = 0; i < targetLength; i++) {
+      const template = selectedProg[i % selectedProg.length]
+      const rootNote = scaleNotes[(template.deg - 1 + Math.floor(i / selectedProg.length)) % scaleNotes.length]
+      const type = template.type
+      newProgression.push({
         root: rootNote,
-        type: chord.type,
-        name: rootNote + formatChordType(chord.type),
-        frequencies: getChordNotes(rootNote, chord.type, 3),
-      }
-    })
+        type,
+        name: rootNote + formatChordType(type),
+        frequencies: getChordNotes(rootNote, type, 3),
+      })
+    }
 
     setProgression(newProgression)
     progressionRef.current = newProgression
@@ -1802,6 +1822,85 @@ export default function ChordGenerator() {
     setProgression(newProgression)
     progressionRef.current = newProgression
     setEditingChord(null)
+  }, [])
+
+  const addChord = useCallback(() => {
+    const modeFamily =
+      mode === "minor" || mode === "dorian" || mode === "phrygian" || mode === "locrian" || mode === "aeolian" || mode === "harmonicMinor" || mode === "melodicMinor" || mode === "hungarian" || mode === "persian"
+        ? "minor"
+        : "major"
+    const scaleNotes = getScaleNotes(key, mode)
+    const randomDegree = Math.floor(Math.random() * scaleNotes.length)
+    const randomType = modeFamily === "minor" ? (Math.random() > 0.5 ? "min" : "min7") : (Math.random() > 0.5 ? "maj" : "maj7")
+    const rootNote = scaleNotes[randomDegree]
+    const newChord: Chord = {
+      root: rootNote,
+      type: randomType,
+      name: rootNote + formatChordType(randomType),
+      frequencies: getChordNotes(rootNote, randomType, 3),
+    }
+    const newProgression = [...progressionRef.current, newChord]
+    setProgression(newProgression)
+    progressionRef.current = newProgression
+  }, [key, mode])
+
+  const removeChord = useCallback((index: number) => {
+    if (progressionRef.current.length <= 1) return
+    const newProgression = progressionRef.current.filter((_, i) => i !== index)
+    setProgression(newProgression)
+    progressionRef.current = newProgression
+    if (activeChordIndex >= newProgression.length) {
+      setActiveChordIndex(-1)
+    }
+    if (currentChordIndexRef.current >= newProgression.length) {
+      currentChordIndexRef.current = 0
+    }
+  }, [activeChordIndex])
+
+  const dragIndexRef = useRef<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+
+  const handleDragStart = useCallback((index: number) => {
+    dragIndexRef.current = index
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    if (dragIndexRef.current !== null && dragIndexRef.current !== index) {
+      setDragOverIndex(index)
+    }
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault()
+    const dragIndex = dragIndexRef.current
+    if (dragIndex === null || dragIndex === dropIndex) {
+      dragIndexRef.current = null
+      setDragOverIndex(null)
+      return
+    }
+    const newProgression = [...progressionRef.current]
+    const [moved] = newProgression.splice(dragIndex, 1)
+    newProgression.splice(dropIndex, 0, moved)
+    setProgression(newProgression)
+    progressionRef.current = newProgression
+    if (activeChordIndex === dragIndex) {
+      setActiveChordIndex(dropIndex)
+    } else if (activeChordIndex > dragIndex && activeChordIndex <= dropIndex) {
+      setActiveChordIndex(activeChordIndex - 1)
+    } else if (activeChordIndex < dragIndex && activeChordIndex >= dropIndex) {
+      setActiveChordIndex(activeChordIndex + 1)
+    }
+    if (currentChordIndexRef.current === dragIndex) {
+      currentChordIndexRef.current = dropIndex
+    }
+    dragIndexRef.current = null
+    setDragOverIndex(null)
+  }, [activeChordIndex])
+
+  const handleDragEnd = useCallback(() => {
+    dragIndexRef.current = null
+    setDragOverIndex(null)
   }, [])
 
   const resetSettings = useCallback(() => {
@@ -1952,7 +2051,7 @@ export default function ChordGenerator() {
             <div className="flex items-center gap-2 md:gap-4 min-w-0">
               <div className="flex items-baseline gap-1.5 md:gap-2">
                 <span className="text-base md:text-xl font-[900] tracking-tight text-[var(--text-primary)] whitespace-nowrap">CHORD.GEN</span>
-                <span className="brand-stamp text-[10px] md:text-[12px] font-[bolder]" style={{background:"#FF6B2B",boxShadow:"0 0 8px rgba(255,107,43,0.5)"}}>v.02</span>
+                <span className="brand-stamp text-[10px] md:text-[12px] font-[bolder]" style={{background:"#FF6B2B",boxShadow:"0 0 8px rgba(255,107,43,0.5)"}}>v.0</span>
               </div>
               <span className="text-[var(--base-border-bright)] mx-0.5 hidden sm:inline">|</span>
               <div className="flex items-center gap-2">
@@ -2010,23 +2109,21 @@ export default function ChordGenerator() {
           {/* Main Display Area */}
           <div className="cyber-panel m-2 md:m-4 md:mt-3 p-3 md:p-6 border border-[var(--base-border)] scanlines scanlines-strong">
             {/* Chord Display — larger, more prominent */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 mb-3 md:mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 mb-3 md:mb-5">
               {progression.map((chord, i) => (
-                <button
+                <div
                   key={i}
+                  draggable
+                  onDragStart={() => handleDragStart(i)}
+                  onDragOver={(e) => handleDragOver(e, i)}
+                  onDrop={(e) => handleDrop(e, i)}
+                  onDragEnd={handleDragEnd}
                   onClick={() => playChordPreview(i)}
-                  className={`relative p-4 md:p-6 transition-all duration-200 cursor-pointer text-left border min-h-[88px] md:min-h-[120px] group
-                    ${activeChordIndex === i 
-                      ? i === 0 ? "bg-[#C0FC14] text-[#0D1117] border-[#C0FC14] chord-active-green shadow-[0_0_20px_rgba(192,252,20,0.3)]"
-                      : i === 1 ? "bg-[#FF2D7C] text-[#0D1117] border-[#FF2D7C] chord-active-pink shadow-[0_0_20px_rgba(255,45,124,0.3)]"
-                      : i === 2 ? "bg-[#2B7FFF] text-[#0D1117] border-[#2B7FFF] chord-active-blue shadow-[0_0_20px_rgba(43,127,255,0.3)]"
-                      : "bg-[#FCEB14] text-[#0D1117] border-[#FCEB14] chord-active-yellow shadow-[0_0_20px_rgba(252,235,20,0.3)]"
-                      : i === 0 ? "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#C0FC14]/80 hover:shadow-[0_0_12px_rgba(192,252,20,0.15)]"
-                      : i === 1 ? "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#FF2D7C]/80 hover:shadow-[0_0_12px_rgba(255,45,124,0.15)]"
-                      : i === 2 ? "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#2B7FFF]/80 hover:shadow-[0_0_12px_rgba(43,127,255,0.15)]"
-                      : "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#FCEB14]/80 hover:shadow-[0_0_12px_rgba(252,235,20,0.15)]"
-                    }`}
+                  className={`relative p-4 md:p-5 transition-all duration-200 cursor-grab active:cursor-grabbing text-left border min-h-[88px] md:min-h-[120px] group select-none ${getChordColorClasses(i, activeChordIndex === i)} ${dragOverIndex === i ? "scale-105 border-dashed border-[#C0FC14] z-10" : ""}`}
                 >
+                  <div className="absolute top-1.5 left-1.5 text-[var(--text-faint)] opacity-40 group-hover:opacity-70">
+                    <GripVertical size={14} />
+                  </div>
                   <div className="text-2xl md:text-4xl font-[800] tracking-tight leading-none">
                     {chord.root}
                     <span className="text-sm md:text-base font-normal opacity-70 ml-1 align-top">{formatChordType(chord.type)}</span>
@@ -2037,17 +2134,38 @@ export default function ChordGenerator() {
                   {activeChordIndex === i && (
                     <div className="absolute top-2 right-2 w-2 h-2 bg-[var(--base-panel)]" />
                   )}
-                  <div 
-                    className={`absolute top-2 right-6 p-1 transition-colors cursor-pointer z-10 opacity-0 group-hover:opacity-100 ${activeChordIndex === i ? "text-[#0D1117] hover:text-[#0D1117]/60" : "text-[var(--text-dim)] hover:text-[#C0FC14]"}`}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setEditingChord({ index: i, root: chord.root, type: chord.type })
-                    }}
-                  >
-                    <Pencil size={10} />
+                  <div className={`absolute top-1.5 right-1.5 flex items-center gap-0.5 transition-opacity z-10 ${activeChordIndex === i ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                    <button
+                      className={`p-1 transition-colors ${activeChordIndex === i ? "text-[#0D1117] hover:text-[#0D1117]/60" : "text-[var(--text-dim)] hover:text-[#C0FC14]"}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setEditingChord({ index: i, root: chord.root, type: chord.type })
+                      }}
+                      title="Edit chord"
+                    >
+                      <Pencil size={10} />
+                    </button>
+                    <button
+                      className={`p-1 transition-colors ${activeChordIndex === i ? "text-[#0D1117] hover:text-[#FF2D7C]" : "text-[var(--text-dim)] hover:text-[#FF2D7C]"}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        removeChord(i)
+                      }}
+                      title="Remove chord"
+                      disabled={progression.length <= 1}
+                    >
+                      <Trash2 size={10} />
+                    </button>
                   </div>
-                </button>
+                </div>
               ))}
+              <div
+                onClick={addChord}
+                className="relative p-4 md:p-5 transition-all duration-200 cursor-pointer text-left border min-h-[88px] md:min-h-[120px] group select-none bg-[var(--base-panel)] border-[var(--base-border)] border-dashed text-[var(--text-muted)] hover:border-[#C0FC14] hover:text-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.15)] flex flex-col items-center justify-center gap-2"
+              >
+                <Plus size={24} />
+                <span className="cyber-mono text-[11px] md:text-[12px] font-[bolder]">ADD CHORD</span>
+              </div>
             </div>
 
             {/* Transport — Play + Generate */}
