@@ -44,8 +44,13 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${chakraPetch.variable} ${shareTechMono.variable} dark`}>
+    <html lang="en" className={`${chakraPetch.variable} ${shareTechMono.variable}`}>
       <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='light')document.documentElement.classList.add('light');}catch(e){}})();`,
+          }}
+        />
         {children}
         <Analytics />
       </body>
