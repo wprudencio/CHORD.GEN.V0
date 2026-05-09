@@ -4,7 +4,7 @@
 
 ## Project Overview
 
-CHORD.GEN.v0 — a 128-chord progression generator. Hybrid instrument / terminal workstation with a dark cyberpunk UI, real-time Web Audio synthesis, and MIDI export. Deployed on Cloudflare Workers.
+CHORD.GEN.v0 — a 128-chord progression generator. Hybrid instrument / terminal workstation with a dark cyberpunk UI, real-time Web Audio synthesis, MIDI export, and offline WAV rendering. Deployed on Cloudflare Workers.
 
 - **Repo:** chord-progression-generator-v0
 - **Live:** Cloudflare Workers via `@opennextjs/cloudflare`
@@ -33,7 +33,7 @@ CHORD.GEN.v0 — a 128-chord progression generator. Hybrid instrument / terminal
 ├── app/                          # Next.js App Router
 │   ├── globals.css               # All styles, CSS variables, theme, design system
 │   ├── layout.tsx                # Root layout: fonts, metadata, theme init script
-│   └── page.tsx                  # ~2600-line single-page app (ALL logic + UI)
+│   └── page.tsx                  # ~3400-line single-page app (ALL logic + UI)
 │       └── components/
 │           └── ThemeToggle.tsx    # Dark/light toggle (custom, not next-themes)
 │
@@ -68,7 +68,7 @@ npm run cf-typegen   # Generate Cloudflare env types
 
 ### Single-File Application
 
-`app/page.tsx` is the entire application (~2600 lines). It contains:
+`app/page.tsx` is the entire application (~3400 lines). It contains:
 - Chord/scale/synth data as large constant objects (`NOTE_FREQUENCIES`, `SCALES`, `CHORD_TYPES`, `STYLE_PROGRESSIONS`, `DRUM_STYLE_PATTERNS`, `SYNTH_RHYTHMS`)
 - All React state and hooks
 - Full Web Audio API synthesis engine
@@ -84,6 +84,7 @@ Custom Web Audio API synthesis with:
 - **Drum synthesis:** Noise-buffer-based kick, snare, hi-hat (no samples)
 - **Convolution reverb:** Impulse response generated procedurally
 - **Signal chain:** Oscillators → Filters → Dry/Wet split → Master Gain → Dynamics Compressor → Soft-clipper Limiter → Destination
+- **WAV export:** `exportWav()` creates an `OfflineAudioContext` with the same signal chain (mirroring all 12 synth types, 3 drum layers, reverb), schedules the full progression for `exportLoopCount` iterations, renders offline, encodes to 16-bit PCM stereo WAV, and triggers a browser download. The export modal lets users choose 1–32 loops with a live duration estimate. The offline audio code is a ~720-line self-contained block within `page.tsx` — if it grows, extract to `lib/audio/export-wav.ts`.
 - **State management:** Uses refs (`isPlayingRef`, `currentBeatRef`, `nextNoteTimeRef`, etc.) to avoid stale closures in the scheduler callback
 
 ### State Persistence
@@ -153,6 +154,7 @@ Custom styled selects/inputs using `.ctrl-wrapper` + `.ctrl-select` / `.ctrl-inp
 ## Accessibility
 
 - Keyboard shortcuts: Space (play/stop), R (regenerate), S (save)
+- Export button uses cyan (`#14FCEB`) accent; modal has +/- stepper for loop count, no cancel button (close via X or click-outside)
 - Skips shortcuts when focus is on `<input>` elements
 - Focus-visible styles use green outline
 - Dark/light theme respects user preference on first visit, then persists
@@ -169,3 +171,5 @@ Custom styled selects/inputs using `.ctrl-wrapper` + `.ctrl-select` / `.ctrl-inp
 8. **Next config:** `ignoreBuildErrors: true` — TS errors won't block builds. Fix them anyway.
 9. **Images:** `unoptimized: true` — no Next.js image optimization.
 10. **Branch strategy:** Work on `feature/*` branches, merge to `main` via PR.
+11. **WAV export audio:** The offline rendering code in `exportWav()` duplicates the real-time synth/drum/reverb logic. If you modify `playSingleNote()`, `playKick()`, `playSnare()`, or `playHiHat()`, you MUST update the corresponding offline variants inside `exportWav()` to keep exports accurate.
+12. **OfflineAudioContext:** Uses `OfflineAudioContext` (not `AudioContext`). It shares `BaseAudioContext` API (createOscillator, createGain, etc.) but lacks `resume()`/`suspend()`. The offline signal chain mirrors the real-time one: masterGain → compressor → limiter, with a re-created procedural convolver reverb. No `activeNodesRef` cleanup needed — nodes self-dispose after rendering.
