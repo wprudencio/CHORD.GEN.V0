@@ -26,6 +26,7 @@
 - **Tailwind CSS v4**
 - **Web Audio API**
 - **TypeScript**
+- **cloudflare workers ready **
 
 ## Getting Started
 
