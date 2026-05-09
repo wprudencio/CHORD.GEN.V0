@@ -810,7 +810,7 @@ export default function ChordGenerator() {
   const [progression, setProgression] = useState<Chord[]>([])
   const [isPlaying, setIsPlaying] = useState(false)
   const [activeChordIndex, setActiveChordIndex] = useState(-1)
-  const [savedProgressions, setSavedProgressions] = useState<{ name: string; key: string; mode: string; chords: Chord[] }[]>([])
+  const [savedProgressions, setSavedProgressions] = useState<{ name: string; key: string; mode: string; style: string; settings: Settings; chords: Chord[] }[]>([])
   const [editingChord, setEditingChord] = useState<{index: number, root: string, type: string} | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
 
@@ -1966,10 +1966,14 @@ export default function ChordGenerator() {
   const saveProgression = useCallback(() => {
     if (progression.length === 0) return
     const name = `${key} ${mode} - ${new Date().toLocaleTimeString()}`
-    setSavedProgressions((prev) => [...prev, { name, key, mode, chords: progression }])
-  }, [progression, key, mode])
+    setSavedProgressions((prev) => [...prev, { name, key, mode, style, settings, chords: progression }])
+  }, [progression, key, mode, style, settings])
 
-  const loadProgression = useCallback((saved: { chords: Chord[] }) => {
+  const loadProgression = useCallback((saved: { key: string; mode: string; style: string; settings: Settings; chords: Chord[] }) => {
+    setKey(saved.key)
+    setMode(saved.mode)
+    setStyle(saved.style)
+    setSettings(saved.settings)
     setProgression(saved.chords)
     progressionRef.current = saved.chords
   }, [])
@@ -2526,7 +2530,10 @@ export default function ChordGenerator() {
                         onClick={() => loadProgression(saved)}
                         className="saved-chip w-full md:w-auto"
                       >
-                        {saved.chords.map((c) => c.name).join("  ")}
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[var(--text-primary)]">{saved.chords.map((c) => c.name).join("  ")}</span>
+                          <span className="cyber-mono text-[10px] text-[var(--text-dim)]">{saved.key} {saved.mode} &middot; {saved.style} &middot; {saved.settings.bpm}bpm &middot; {saved.settings.timeSignature}/4 &middot; {saved.settings.synthType}</span>
+                        </div>
                       </button>
                       <button
                         onClick={(e) => {
