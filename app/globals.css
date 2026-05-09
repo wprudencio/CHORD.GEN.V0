@@ -131,6 +131,83 @@
 }
 
 /* ============================================================
+   LIGHT THEME
+   ============================================================ */
+
+.light {
+  --base-bg: #F4F3EF;
+  --base-panel: #EAE8E1;
+  --base-card: #E0DDD4;
+  --base-input: #D8D5CC;
+  --base-border: #C8C4BA;
+  --base-border-bright: #A8A49A;
+
+  --text-primary: #1A1A1A;
+  --text-secondary: #3A3A32;
+  --text-muted: #5A5A52;
+  --text-dim: #7A7A72;
+  --text-faint: #9A9A92;
+
+  --background: var(--base-bg);
+  --foreground: var(--text-primary);
+  --card: var(--base-card);
+  --card-foreground: var(--text-primary);
+  --popover: var(--base-card);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--neon-green);
+  --primary-foreground: var(--base-bg);
+  --secondary: var(--base-panel);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--base-panel);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--neon-green);
+  --accent-foreground: var(--base-bg);
+  --destructive: var(--neon-pink);
+  --destructive-foreground: var(--text-primary);
+  --border: var(--base-border);
+  --input: var(--base-border);
+  --ring: var(--neon-green);
+  --sidebar: var(--base-panel);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--neon-green);
+  --sidebar-primary-foreground: var(--base-bg);
+  --sidebar-accent: var(--neon-green);
+  --sidebar-accent-foreground: var(--base-bg);
+  --sidebar-border: var(--base-border);
+  --sidebar-ring: var(--neon-green);
+}
+
+.light .cyber-grid-bg {
+  background-color: var(--base-bg);
+  background-image:
+    linear-gradient(rgba(192, 252, 20, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(43, 127, 255, 0.03) 1px, transparent 1px);
+}
+
+.light .cyber-panel {
+  background-color: var(--base-panel);
+  background-image:
+    linear-gradient(rgba(192, 252, 20, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(43, 127, 255, 0.02) 1px, transparent 1px);
+}
+
+.light .scanlines::before {
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(192, 252, 20, 0.025) 2px, rgba(43, 127, 255, 0.025) 4px);
+}
+
+.light .scanlines-strong::before {
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(192, 252, 20, 0.04) 2px, rgba(255, 45, 124, 0.025) 4px);
+}
+
+.light .noise-overlay::after {
+  opacity: 0.015;
+  mix-blend-mode: multiply;
+}
+
+.light ::-webkit-scrollbar-track { background: var(--base-bg); }
+.light ::-webkit-scrollbar-thumb { background: var(--base-border-bright); }
+
+/* ============================================================
    BACKGROUNDS
    ============================================================ */
 
