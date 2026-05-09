@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Pencil, X } from "lucide-react"
+import { Pencil, X, Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
 import ThemeToggle from "./components/ThemeToggle"
 import {
   Dialog,
@@ -758,6 +758,21 @@ function getChordTypeName(type: string): string {
     "7b9": "7 Flat 9",
   }
   return names[type] || type
+}
+
+const CHORD_COLOR_CYCLE = [
+  { active: "bg-[#C0FC14] text-[#0D1117] border-[#C0FC14] chord-active-green shadow-[0_0_20px_rgba(192,252,20,0.3)]", inactive: "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#C0FC14]/80 hover:shadow-[0_0_12px_rgba(192,252,20,0.15)]" },
+  { active: "bg-[#FF2D7C] text-[#0D1117] border-[#FF2D7C] chord-active-pink shadow-[0_0_20px_rgba(255,45,124,0.3)]", inactive: "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#FF2D7C]/80 hover:shadow-[0_0_12px_rgba(255,45,124,0.15)]" },
+  { active: "bg-[#2B7FFF] text-[#0D1117] border-[#2B7FFF] chord-active-blue shadow-[0_0_20px_rgba(43,127,255,0.3)]", inactive: "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#2B7FFF]/80 hover:shadow-[0_0_12px_rgba(43,127,255,0.15)]" },
+  { active: "bg-[#FCEB14] text-[#0D1117] border-[#FCEB14] chord-active-yellow shadow-[0_0_20px_rgba(252,235,20,0.3)]", inactive: "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#FCEB14]/80 hover:shadow-[0_0_12px_rgba(252,235,20,0.15)]" },
+  { active: "bg-[#FF6B2B] text-[#0D1117] border-[#FF6B2B] chord-active-orange shadow-[0_0_20px_rgba(255,107,43,0.3)]", inactive: "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#FF6B2B]/80 hover:shadow-[0_0_12px_rgba(255,107,43,0.15)]" },
+  { active: "bg-[#B829FF] text-[#0D1117] border-[#B829FF] chord-active-purple shadow-[0_0_20px_rgba(184,41,255,0.3)]", inactive: "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#B829FF]/80 hover:shadow-[0_0_12px_rgba(184,41,255,0.15)]" },
+  { active: "bg-[#14FCEB] text-[#0D1117] border-[#14FCEB] chord-active-cyan shadow-[0_0_20px_rgba(20,252,235,0.3)]", inactive: "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#14FCEB]/80 hover:shadow-[0_0_12px_rgba(20,252,235,0.15)]" },
+]
+
+function getChordColorClasses(index: number, isActive: boolean): string {
+  const c = CHORD_COLOR_CYCLE[index % CHORD_COLOR_CYCLE.length]
+  return isActive ? c.active : c.inactive
 }
 
 function getScaleNotes(rootNote: string, mode: string): string[] {
@@ -1804,6 +1819,59 @@ export default function ChordGenerator() {
     setEditingChord(null)
   }, [])
 
+  const addChord = useCallback(() => {
+    const modeFamily =
+      mode === "minor" || mode === "dorian" || mode === "phrygian" || mode === "locrian" || mode === "aeolian" || mode === "harmonicMinor" || mode === "melodicMinor" || mode === "hungarian" || mode === "persian"
+        ? "minor"
+        : "major"
+    const scaleNotes = getScaleNotes(key, mode)
+    const randomDegree = Math.floor(Math.random() * scaleNotes.length)
+    const randomType = modeFamily === "minor" ? (Math.random() > 0.5 ? "min" : "min7") : (Math.random() > 0.5 ? "maj" : "maj7")
+    const rootNote = scaleNotes[randomDegree]
+    const newChord: Chord = {
+      root: rootNote,
+      type: randomType,
+      name: rootNote + formatChordType(randomType),
+      frequencies: getChordNotes(rootNote, randomType, 3),
+    }
+    const newProgression = [...progressionRef.current, newChord]
+    setProgression(newProgression)
+    progressionRef.current = newProgression
+  }, [key, mode])
+
+  const removeChord = useCallback((index: number) => {
+    if (progressionRef.current.length <= 1) return
+    const newProgression = progressionRef.current.filter((_, i) => i !== index)
+    setProgression(newProgression)
+    progressionRef.current = newProgression
+    if (activeChordIndex >= newProgression.length) {
+      setActiveChordIndex(-1)
+    }
+    if (currentChordIndexRef.current >= newProgression.length) {
+      currentChordIndexRef.current = 0
+    }
+  }, [activeChordIndex])
+
+  const moveChord = useCallback((index: number, direction: number) => {
+    const newIndex = index + direction
+    if (newIndex < 0 || newIndex >= progressionRef.current.length) return
+    const newProgression = [...progressionRef.current]
+    const [moved] = newProgression.splice(index, 1)
+    newProgression.splice(newIndex, 0, moved)
+    setProgression(newProgression)
+    progressionRef.current = newProgression
+    if (activeChordIndex === index) {
+      setActiveChordIndex(newIndex)
+    } else if (activeChordIndex === newIndex) {
+      setActiveChordIndex(index)
+    }
+    if (currentChordIndexRef.current === index) {
+      currentChordIndexRef.current = newIndex
+    } else if (currentChordIndexRef.current === newIndex) {
+      currentChordIndexRef.current = index
+    }
+  }, [activeChordIndex])
+
   const resetSettings = useCallback(() => {
     setSettings(DEFAULT_SETTINGS)
     setKey("C")
@@ -2010,22 +2078,12 @@ export default function ChordGenerator() {
           {/* Main Display Area */}
           <div className="cyber-panel m-2 md:m-4 md:mt-3 p-3 md:p-6 border border-[var(--base-border)] scanlines scanlines-strong">
             {/* Chord Display — larger, more prominent */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 mb-3 md:mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 mb-3 md:mb-5">
               {progression.map((chord, i) => (
-                <button
+                <div
                   key={i}
                   onClick={() => playChordPreview(i)}
-                  className={`relative p-4 md:p-6 transition-all duration-200 cursor-pointer text-left border min-h-[88px] md:min-h-[120px] group
-                    ${activeChordIndex === i 
-                      ? i === 0 ? "bg-[#C0FC14] text-[#0D1117] border-[#C0FC14] chord-active-green shadow-[0_0_20px_rgba(192,252,20,0.3)]"
-                      : i === 1 ? "bg-[#FF2D7C] text-[#0D1117] border-[#FF2D7C] chord-active-pink shadow-[0_0_20px_rgba(255,45,124,0.3)]"
-                      : i === 2 ? "bg-[#2B7FFF] text-[#0D1117] border-[#2B7FFF] chord-active-blue shadow-[0_0_20px_rgba(43,127,255,0.3)]"
-                      : "bg-[#FCEB14] text-[#0D1117] border-[#FCEB14] chord-active-yellow shadow-[0_0_20px_rgba(252,235,20,0.3)]"
-                      : i === 0 ? "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#C0FC14]/80 hover:shadow-[0_0_12px_rgba(192,252,20,0.15)]"
-                      : i === 1 ? "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#FF2D7C]/80 hover:shadow-[0_0_12px_rgba(255,45,124,0.15)]"
-                      : i === 2 ? "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#2B7FFF]/80 hover:shadow-[0_0_12px_rgba(43,127,255,0.15)]"
-                      : "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#FCEB14]/80 hover:shadow-[0_0_12px_rgba(252,235,20,0.15)]"
-                    }`}
+                  className={`relative p-4 md:p-5 transition-all duration-200 cursor-pointer text-left border min-h-[88px] md:min-h-[120px] group select-none ${getChordColorClasses(i, activeChordIndex === i)}`}
                 >
                   <div className="text-2xl md:text-4xl font-[800] tracking-tight leading-none">
                     {chord.root}
@@ -2037,17 +2095,60 @@ export default function ChordGenerator() {
                   {activeChordIndex === i && (
                     <div className="absolute top-2 right-2 w-2 h-2 bg-[var(--base-panel)]" />
                   )}
-                  <div 
-                    className={`absolute top-2 right-6 p-1 transition-colors cursor-pointer z-10 opacity-0 group-hover:opacity-100 ${activeChordIndex === i ? "text-[#0D1117] hover:text-[#0D1117]/60" : "text-[var(--text-dim)] hover:text-[#C0FC14]"}`}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setEditingChord({ index: i, root: chord.root, type: chord.type })
-                    }}
-                  >
-                    <Pencil size={10} />
+                  <div className={`absolute top-1.5 right-1.5 flex items-center gap-0.5 transition-opacity z-10 ${activeChordIndex === i ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                    <button
+                      className={`p-1 transition-colors ${activeChordIndex === i ? "text-[#0D1117] hover:text-[#0D1117]/60" : "text-[var(--text-dim)] hover:text-[#C0FC14]"}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        moveChord(i, -1)
+                      }}
+                      title="Move left"
+                      disabled={i === 0}
+                    >
+                      <ChevronLeft size={12} />
+                    </button>
+                    <button
+                      className={`p-1 transition-colors ${activeChordIndex === i ? "text-[#0D1117] hover:text-[#0D1117]/60" : "text-[var(--text-dim)] hover:text-[#C0FC14]"}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setEditingChord({ index: i, root: chord.root, type: chord.type })
+                      }}
+                      title="Edit chord"
+                    >
+                      <Pencil size={10} />
+                    </button>
+                    <button
+                      className={`p-1 transition-colors ${activeChordIndex === i ? "text-[#0D1117] hover:text-[#0D1117]/60" : "text-[var(--text-dim)] hover:text-[#C0FC14]"}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        moveChord(i, 1)
+                      }}
+                      title="Move right"
+                      disabled={i === progression.length - 1}
+                    >
+                      <ChevronRight size={12} />
+                    </button>
+                    <button
+                      className={`p-1 transition-colors ${activeChordIndex === i ? "text-[#0D1117] hover:text-[#FF2D7C]" : "text-[var(--text-dim)] hover:text-[#FF2D7C]"}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        removeChord(i)
+                      }}
+                      title="Remove chord"
+                      disabled={progression.length <= 1}
+                    >
+                      <Trash2 size={10} />
+                    </button>
                   </div>
-                </button>
+                </div>
               ))}
+              <div
+                onClick={addChord}
+                className="relative p-4 md:p-5 transition-all duration-200 cursor-pointer text-left border min-h-[88px] md:min-h-[120px] group select-none bg-[var(--base-panel)] border-[var(--base-border)] border-dashed text-[var(--text-muted)] hover:border-[#C0FC14] hover:text-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.15)] flex flex-col items-center justify-center gap-2"
+              >
+                <Plus size={24} />
+                <span className="cyber-mono text-[11px] md:text-[12px] font-[bolder]">ADD CHORD</span>
+              </div>
             </div>
 
             {/* Transport — Play + Generate */}
