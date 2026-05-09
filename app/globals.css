@@ -197,9 +197,9 @@
 
 .cyber-mono {
   font-family: var(--font-mono), 'Share Tech Mono', monospace;
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.18em;
+  font-size: 12px;
+  font-weight: bolder;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
 }
 
@@ -475,7 +475,7 @@ button { border-radius: 0; transition: all 150ms ease; }
   background: var(--neon-green);
   color: var(--base-bg);
   font-family: var(--font-mono), 'Share Tech Mono', monospace;
-  font-size: 10px; font-weight: 700;
+  font-size: 11px; font-weight: 700;
   letter-spacing: 0.12em; text-transform: uppercase;
   padding: 4px 10px; line-height: 1;
   box-shadow: 0 0 8px var(--green-glow);

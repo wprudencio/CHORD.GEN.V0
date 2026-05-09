@@ -1951,12 +1951,12 @@ export default function ChordGenerator() {
             <div className="flex items-center gap-2 md:gap-4 min-w-0">
               <div className="flex items-baseline gap-1.5 md:gap-2">
                 <span className="text-base md:text-xl font-[900] tracking-tight text-[#F0F6E8] whitespace-nowrap">CHORD.GEN</span>
-                <span className="brand-stamp text-[9px] md:text-[11px]" style={{background:"#FF6B2B",boxShadow:"0 0 8px rgba(255,107,43,0.5)"}}>v.02</span>
+                <span className="brand-stamp text-[10px] md:text-[12px] font-[bolder]" style={{background:"#FF6B2B",boxShadow:"0 0 8px rgba(255,107,43,0.5)"}}>v.02</span>
               </div>
               <span className="text-[#3A4050] mx-0.5 hidden sm:inline">|</span>
               <div className="flex items-center gap-2">
                 <span className={`w-2 h-2 shrink-0 ${isPlaying ? "bg-[#C0FC14] animate-pulse shadow-[0_0_8px_rgba(192,252,20,0.6)]" : "bg-[#3A4A2A]"}`} />
-                <span className="cyber-mono text-[10px] md:text-[11px] text-[#7A8A6A] hidden sm:inline">{isPlaying ? "PLAYING" : "STOPPED"}</span>
+                <span className="cyber-mono text-[11px] md:text-[12px] font-[bolder] text-[#7A8A6A] hidden sm:inline">{isPlaying ? "PLAYING" : "STOPPED"}</span>
               </div>
             </div>
             <div className="flex items-center gap-1 md:gap-1.5 shrink-0">
@@ -2029,7 +2029,7 @@ export default function ChordGenerator() {
                     {chord.root}
                     <span className="text-sm md:text-base font-normal opacity-70 ml-1 align-top">{formatChordType(chord.type)}</span>
                   </div>
-                  <div className={`cyber-mono text-[10px] md:text-[11px] mt-2 ${activeChordIndex === i ? "text-[#0D1117]/60" : "text-[#7A8A6A] group-hover:text-[#8A9A7A]"}`}>
+                  <div className={`cyber-mono text-[11px] md:text-[12px] font-[bolder] mt-2 ${activeChordIndex === i ? "text-[#0D1117]/60" : "text-[#7A8A6A] group-hover:text-[#8A9A7A]"}`}>
                     {getChordTypeName(chord.type)}
                   </div>
                   {activeChordIndex === i && (
@@ -2097,10 +2097,10 @@ export default function ChordGenerator() {
                 <span className="w-2 h-2 bg-[#C0FC14] shrink-0" />
                 <span className="cyber-mono text-[13px] text-[#E8F0D8] font-[800] tracking-wider">CHORD CONFIG</span>
                 <span className="slash-divider text-[#C0FC14] glow-green">////</span>
-                <span className="cyber-mono text-[11px] text-[#8A9A7A] uppercase hidden sm:inline"><span className="text-[#C0FC14]">Key</span> &middot; <span className="text-[#C0FC14]">Mode</span> &middot; <span className="text-[#C0FC14]">Style</span> &middot; <span className="text-[#C0FC14]">Meter</span></span>
+                <span className="cyber-mono text-[12px] text-[#8A9A7A] uppercase hidden sm:inline font-[bolder]"><span className="text-[#C0FC14]">Key</span> &middot; <span className="text-[#C0FC14]">Mode</span> &middot; <span className="text-[#C0FC14]">Style</span> &middot; <span className="text-[#C0FC14]">Meter</span></span>
               </div>
               <div className="p-2 md:p-3">
-                <div className="hidden md:grid grid-cols-6 gap-2 mb-2 cyber-mono text-[11px] text-[#8A9A7A] px-0.5">
+                <div className="hidden md:grid grid-cols-6 gap-2 mb-2 cyber-mono text-[12px] font-[bolder] text-[#8A9A7A] px-0.5">
                   <span>KEY</span>
                   <span>MODE</span>
                   <span>STYLE</span>
@@ -2110,7 +2110,7 @@ export default function ChordGenerator() {
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
                   <div className="flex flex-col gap-1">
-                    <span className="cyber-mono text-[10px] md:hidden text-[#7A8A6A] px-0.5">KEY</span>
+                    <span className="cyber-mono text-[11px] md:hidden font-[bolder] text-[#7A8A6A] px-0.5">KEY</span>
                     <div className="ctrl-wrapper">
                       <select
                         value={key}
@@ -2124,7 +2124,7 @@ export default function ChordGenerator() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="cyber-mono text-[10px] md:hidden text-[#7A8A6A] px-0.5">MODE</span>
+                    <span className="cyber-mono text-[11px] md:hidden font-[bolder] text-[#7A8A6A] px-0.5">MODE</span>
                     <div className="ctrl-wrapper">
                       <select
                         value={mode}
@@ -2154,7 +2154,7 @@ export default function ChordGenerator() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="cyber-mono text-[10px] md:hidden text-[#7A8A6A] px-0.5">STYLE</span>
+                    <span className="cyber-mono text-[11px] md:hidden font-[bolder] text-[#7A8A6A] px-0.5">STYLE</span>
                     <div className="ctrl-wrapper">
                       <select
                         value={style}
@@ -2185,7 +2185,7 @@ export default function ChordGenerator() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="cyber-mono text-[10px] md:hidden text-[#7A8A6A] px-0.5">BPM</span>
+                    <span className="cyber-mono text-[11px] md:hidden font-[bolder] text-[#7A8A6A] px-0.5">BPM</span>
                     <div className="ctrl-wrapper">
                       <input
                         type="number"
@@ -2213,7 +2213,7 @@ export default function ChordGenerator() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="cyber-mono text-[10px] md:hidden text-[#7A8A6A] px-0.5">TIME</span>
+                    <span className="cyber-mono text-[11px] md:hidden font-[bolder] text-[#7A8A6A] px-0.5">TIME</span>
                     <div className="ctrl-wrapper">
                       <select
                         value={settings.timeSignature}
@@ -2227,7 +2227,7 @@ export default function ChordGenerator() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="cyber-mono text-[10px] md:hidden text-[#7A8A6A] px-0.5">BARS</span>
+                    <span className="cyber-mono text-[11px] md:hidden font-[bolder] text-[#7A8A6A] px-0.5">BARS</span>
                     <div className="ctrl-wrapper">
                       <select
                         value={settings.barsPerChord}
@@ -2250,10 +2250,10 @@ export default function ChordGenerator() {
                 <span className="w-2 h-2 bg-[#C0FC14] shrink-0" />
                 <span className="cyber-mono text-[13px] text-[#E8F0D8] font-[800] tracking-wider">SYNTH CONFIG</span>
                 <span className="slash-divider text-[#9AAA8A]">////</span>
-                <span className="cyber-mono text-[11px] text-[#8A9A7A] uppercase hidden sm:inline"><span className="text-[#2B7FFF]">Osc</span> &middot; <span className="text-[#2B7FFF]">Pattern</span> &middot; <span className="text-[#2B7FFF]">Reverb</span> &middot; <span className="text-[#2B7FFF]">Level</span></span>
+                <span className="cyber-mono text-[12px] text-[#8A9A7A] uppercase hidden sm:inline font-[bolder]"><span className="text-[#2B7FFF]">Osc</span> &middot; <span className="text-[#2B7FFF]">Pattern</span> &middot; <span className="text-[#2B7FFF]">Reverb</span> &middot; <span className="text-[#2B7FFF]">Level</span></span>
               </div>
               <div className="p-2 md:p-3">
-                <div className="hidden md:grid grid-cols-4 gap-2 mb-2 cyber-mono text-[11px] text-[#8A9A7A] px-0.5">
+                <div className="hidden md:grid grid-cols-4 gap-2 mb-2 cyber-mono text-[12px] font-[bolder] text-[#8A9A7A] px-0.5">
                   <span>SYNTH</span>
                   <span>RHYTHM</span>
                   <span>REVERB</span>
@@ -2261,7 +2261,7 @@ export default function ChordGenerator() {
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div className="flex flex-col gap-1">
-                    <span className="cyber-mono text-[10px] md:hidden text-[#7A8A6A] px-0.5">SYNTH</span>
+                    <span className="cyber-mono text-[11px] md:hidden font-[bolder] text-[#7A8A6A] px-0.5">SYNTH</span>
                     <div className="ctrl-wrapper">
                       <select
                         value={settings.synthType}
@@ -2284,7 +2284,7 @@ export default function ChordGenerator() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="cyber-mono text-[10px] md:hidden text-[#7A8A6A] px-0.5">RHYTHM</span>
+                    <span className="cyber-mono text-[11px] md:hidden font-[bolder] text-[#7A8A6A] px-0.5">RHYTHM</span>
                     <div className="ctrl-wrapper">
                       <select
                         value={settings.synthRhythm}
@@ -2298,7 +2298,7 @@ export default function ChordGenerator() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="cyber-mono text-[10px] md:hidden text-[#7A8A6A] px-0.5">REVERB</span>
+                    <span className="cyber-mono text-[11px] md:hidden font-[bolder] text-[#7A8A6A] px-0.5">REVERB</span>
                     <div className="ctrl-range-wrapper">
                       <input
                         type="range"
@@ -2310,7 +2310,7 @@ export default function ChordGenerator() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="cyber-mono text-[10px] md:hidden text-[#7A8A6A] px-0.5">CH VOL</span>
+                    <span className="cyber-mono text-[11px] md:hidden font-[bolder] text-[#7A8A6A] px-0.5">CH VOL</span>
                     <div className="ctrl-range-wrapper">
                       <input
                         type="range"
@@ -2331,17 +2331,17 @@ export default function ChordGenerator() {
                 <span className="w-2 h-2 bg-[#C0FC14] shrink-0" />
                 <span className="cyber-mono text-[13px] text-[#E8F0D8] font-[800] tracking-wider">DRUM CONFIG</span>
                 <span className="slash-divider text-[#9AAA8A]">////</span>
-                <span className="cyber-mono text-[11px] text-[#8A9A7A] uppercase hidden sm:inline"><span className="text-[#FF2D7C]">Pattern</span> &middot; <span className="text-[#FF2D7C]">Level</span> &middot; <span className="text-[#FF2D7C]">Toggle</span></span>
+                <span className="cyber-mono text-[12px] text-[#8A9A7A] uppercase hidden sm:inline font-[bolder]"><span className="text-[#FF2D7C]">Pattern</span> &middot; <span className="text-[#FF2D7C]">Level</span> &middot; <span className="text-[#FF2D7C]">Toggle</span></span>
               </div>
               <div className="p-2 md:p-3">
-                <div className="hidden md:grid grid-cols-3 gap-2 mb-2 cyber-mono text-[11px] text-[#8A9A7A] px-0.5">
+                <div className="hidden md:grid grid-cols-3 gap-2 mb-2 cyber-mono text-[12px] font-[bolder] text-[#8A9A7A] px-0.5">
                   <span>STYLE</span>
                   <span>VOLUME</span>
                   <span>ENABLE</span>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   <div className="flex flex-col gap-1">
-                    <span className="cyber-mono text-[10px] md:hidden text-[#7A8A6A] px-0.5">STYLE</span>
+                    <span className="cyber-mono text-[11px] md:hidden font-[bolder] text-[#7A8A6A] px-0.5">STYLE</span>
                     <div className="ctrl-wrapper">
                       <select
                         value={settings.drumStyle}
@@ -2366,7 +2366,7 @@ export default function ChordGenerator() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="cyber-mono text-[10px] md:hidden text-[#7A8A6A] px-0.5">VOLUME</span>
+                    <span className="cyber-mono text-[11px] md:hidden font-[bolder] text-[#7A8A6A] px-0.5">VOLUME</span>
                     <div className="ctrl-range-wrapper">
                       <input
                         type="range"
@@ -2378,7 +2378,7 @@ export default function ChordGenerator() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="cyber-mono text-[10px] md:hidden text-[#7A8A6A] px-0.5">ENABLE</span>
+                    <span className="cyber-mono text-[11px] md:hidden font-[bolder] text-[#7A8A6A] px-0.5">ENABLE</span>
                     <button
                       onClick={() => setSettings((s) => ({ ...s, drumsEnabled: !s.drumsEnabled }))}
                       className={`ctrl-toggle ${settings.drumsEnabled ? 'active' : 'inactive'}`}
@@ -2424,7 +2424,7 @@ export default function ChordGenerator() {
             )}
           </div>
           {/* Footer */}
-          <div className="bg-[#161B22] cyber-panel px-3 md:px-6 py-2.5 md:py-3 flex items-center justify-center gap-3 cyber-mono text-[11px] text-[#7A8A6A] border border-[#2A2F38]">
+          <div className="bg-[#161B22] cyber-panel px-3 md:px-6 py-2.5 md:py-3 flex items-center justify-center gap-3 cyber-mono text-[12px] text-[#7A8A6A] border border-[#2A2F38] font-[bolder]">
             <span className="hidden sm:inline text-[#C0FC14] glow-green">SPACE</span>
             <span className="text-[#3A4050] hidden sm:inline">=</span>
             <span>PLAY / STOP</span>
