@@ -366,14 +366,6 @@ input[type="range"]::-moz-range-thumb {
   position: relative; overflow: hidden;
   transition: all 200ms ease;
 }
-.transport-btn::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg, transparent 40%, var(--green-dim) 50%, transparent 60%);
-  opacity: 0; transition: opacity 300ms ease;
-}
-.transport-btn:hover::before { opacity: 1; }
-.transport-btn:hover { box-shadow: 0 0 20px var(--green-glow); }
 .transport-btn:active { transform: translateY(1px); }
 
 /* ============================================================
