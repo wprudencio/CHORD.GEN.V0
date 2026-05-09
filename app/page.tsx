@@ -1969,11 +1969,11 @@ export default function ChordGenerator() {
     setSavedProgressions((prev) => [...prev, { name, key, mode, style, settings, chords: progression }])
   }, [progression, key, mode, style, settings])
 
-  const loadProgression = useCallback((saved: { key: string; mode: string; style: string; settings: Settings; chords: Chord[] }) => {
+  const loadProgression = useCallback((saved: { key: string; mode: string; style?: string; settings?: Settings; chords: Chord[] }) => {
     setKey(saved.key)
     setMode(saved.mode)
-    setStyle(saved.style)
-    setSettings(saved.settings)
+    if (saved.style) setStyle(saved.style)
+    if (saved.settings) setSettings(saved.settings)
     setProgression(saved.chords)
     progressionRef.current = saved.chords
   }, [])
@@ -2532,7 +2532,7 @@ export default function ChordGenerator() {
                       >
                         <div className="flex flex-col gap-0.5">
                           <span className="text-[var(--text-primary)]">{saved.chords.map((c) => c.name).join("  ")}</span>
-                          <span className="cyber-mono text-[10px] text-[var(--text-dim)]">{saved.key} {saved.mode} &middot; {saved.style} &middot; {saved.settings.bpm}bpm &middot; {saved.settings.timeSignature}/4 &middot; {saved.settings.synthType}</span>
+                          <span className="cyber-mono text-[10px] text-[var(--text-dim)]">{saved.key} {saved.mode}{saved.style ? ` · ${saved.style}` : ''}{saved.settings ? ` · ${saved.settings.bpm}bpm · ${saved.settings.timeSignature}/4 · ${saved.settings.synthType}` : ''}</span>
                         </div>
                       </button>
                       <button
