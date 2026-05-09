@@ -1,6 +1,6 @@
 <img width="1902" height="875" alt="image" src="https://github.com/user-attachments/assets/e8384d91-599e-4895-ad4e-9fc516fd035e" />
 
-# CHORD.GEN /// Progression Composer
+# CHORD.GEN.v0 /// Progression Composer
 
 128 chord progression generator — hybrid instrument / terminal workstation. Dark cyberpunk UI, real‑time audio, MIDI export.
 
