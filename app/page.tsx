@@ -1952,7 +1952,7 @@ export default function ChordGenerator() {
             <div className="flex items-center gap-2 md:gap-4 min-w-0">
               <div className="flex items-baseline gap-1.5 md:gap-2">
                 <span className="text-base md:text-xl font-[900] tracking-tight text-[var(--text-primary)] whitespace-nowrap">CHORD.GEN</span>
-                <span className="brand-stamp text-[10px] md:text-[12px] font-[bolder]" style={{background:"#FF6B2B",boxShadow:"0 0 8px rgba(255,107,43,0.5)"}}>v.02</span>
+                <span className="brand-stamp text-[10px] md:text-[12px] font-[bolder]" style={{background:"#FF6B2B",boxShadow:"0 0 8px rgba(255,107,43,0.5)"}}>v.0</span>
               </div>
               <span className="text-[var(--base-border-bright)] mx-0.5 hidden sm:inline">|</span>
               <div className="flex items-center gap-2">
