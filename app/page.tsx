@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Pencil, X, Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
+import { Pencil, X, Plus, Trash2, GripVertical } from "lucide-react"
 import ThemeToggle from "./components/ThemeToggle"
 import {
   Dialog,
@@ -1782,15 +1782,20 @@ export default function ChordGenerator() {
     const selectedProg = progressions[Math.floor(Math.random() * progressions.length)]
     const scaleNotes = getScaleNotes(key, mode)
 
-    const newProgression = selectedProg.map((chord) => {
-      const rootNote = scaleNotes[(chord.deg - 1) % scaleNotes.length]
-      return {
+    const targetLength = Math.max(1, progressionRef.current.length || 4)
+
+    const newProgression: Chord[] = []
+    for (let i = 0; i < targetLength; i++) {
+      const template = selectedProg[i % selectedProg.length]
+      const rootNote = scaleNotes[(template.deg - 1 + Math.floor(i / selectedProg.length)) % scaleNotes.length]
+      const type = template.type
+      newProgression.push({
         root: rootNote,
-        type: chord.type,
-        name: rootNote + formatChordType(chord.type),
-        frequencies: getChordNotes(rootNote, chord.type, 3),
-      }
-    })
+        type,
+        name: rootNote + formatChordType(type),
+        frequencies: getChordNotes(rootNote, type, 3),
+      })
+    }
 
     setProgression(newProgression)
     progressionRef.current = newProgression
@@ -1852,25 +1857,51 @@ export default function ChordGenerator() {
     }
   }, [activeChordIndex])
 
-  const moveChord = useCallback((index: number, direction: number) => {
-    const newIndex = index + direction
-    if (newIndex < 0 || newIndex >= progressionRef.current.length) return
+  const dragIndexRef = useRef<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+
+  const handleDragStart = useCallback((index: number) => {
+    dragIndexRef.current = index
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    if (dragIndexRef.current !== null && dragIndexRef.current !== index) {
+      setDragOverIndex(index)
+    }
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault()
+    const dragIndex = dragIndexRef.current
+    if (dragIndex === null || dragIndex === dropIndex) {
+      dragIndexRef.current = null
+      setDragOverIndex(null)
+      return
+    }
     const newProgression = [...progressionRef.current]
-    const [moved] = newProgression.splice(index, 1)
-    newProgression.splice(newIndex, 0, moved)
+    const [moved] = newProgression.splice(dragIndex, 1)
+    newProgression.splice(dropIndex, 0, moved)
     setProgression(newProgression)
     progressionRef.current = newProgression
-    if (activeChordIndex === index) {
-      setActiveChordIndex(newIndex)
-    } else if (activeChordIndex === newIndex) {
-      setActiveChordIndex(index)
+    if (activeChordIndex === dragIndex) {
+      setActiveChordIndex(dropIndex)
+    } else if (activeChordIndex > dragIndex && activeChordIndex <= dropIndex) {
+      setActiveChordIndex(activeChordIndex - 1)
+    } else if (activeChordIndex < dragIndex && activeChordIndex >= dropIndex) {
+      setActiveChordIndex(activeChordIndex + 1)
     }
-    if (currentChordIndexRef.current === index) {
-      currentChordIndexRef.current = newIndex
-    } else if (currentChordIndexRef.current === newIndex) {
-      currentChordIndexRef.current = index
+    if (currentChordIndexRef.current === dragIndex) {
+      currentChordIndexRef.current = dropIndex
     }
+    dragIndexRef.current = null
+    setDragOverIndex(null)
   }, [activeChordIndex])
+
+  const handleDragEnd = useCallback(() => {
+    dragIndexRef.current = null
+    setDragOverIndex(null)
+  }, [])
 
   const resetSettings = useCallback(() => {
     setSettings(DEFAULT_SETTINGS)
@@ -2082,9 +2113,17 @@ export default function ChordGenerator() {
               {progression.map((chord, i) => (
                 <div
                   key={i}
+                  draggable
+                  onDragStart={() => handleDragStart(i)}
+                  onDragOver={(e) => handleDragOver(e, i)}
+                  onDrop={(e) => handleDrop(e, i)}
+                  onDragEnd={handleDragEnd}
                   onClick={() => playChordPreview(i)}
-                  className={`relative p-4 md:p-5 transition-all duration-200 cursor-pointer text-left border min-h-[88px] md:min-h-[120px] group select-none ${getChordColorClasses(i, activeChordIndex === i)}`}
+                  className={`relative p-4 md:p-5 transition-all duration-200 cursor-grab active:cursor-grabbing text-left border min-h-[88px] md:min-h-[120px] group select-none ${getChordColorClasses(i, activeChordIndex === i)} ${dragOverIndex === i ? "scale-105 border-dashed border-[#C0FC14] z-10" : ""}`}
                 >
+                  <div className="absolute top-1.5 left-1.5 text-[var(--text-faint)] opacity-40 group-hover:opacity-70">
+                    <GripVertical size={14} />
+                  </div>
                   <div className="text-2xl md:text-4xl font-[800] tracking-tight leading-none">
                     {chord.root}
                     <span className="text-sm md:text-base font-normal opacity-70 ml-1 align-top">{formatChordType(chord.type)}</span>
@@ -2100,33 +2139,11 @@ export default function ChordGenerator() {
                       className={`p-1 transition-colors ${activeChordIndex === i ? "text-[#0D1117] hover:text-[#0D1117]/60" : "text-[var(--text-dim)] hover:text-[#C0FC14]"}`}
                       onClick={(e) => {
                         e.stopPropagation()
-                        moveChord(i, -1)
-                      }}
-                      title="Move left"
-                      disabled={i === 0}
-                    >
-                      <ChevronLeft size={12} />
-                    </button>
-                    <button
-                      className={`p-1 transition-colors ${activeChordIndex === i ? "text-[#0D1117] hover:text-[#0D1117]/60" : "text-[var(--text-dim)] hover:text-[#C0FC14]"}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
                         setEditingChord({ index: i, root: chord.root, type: chord.type })
                       }}
                       title="Edit chord"
                     >
                       <Pencil size={10} />
-                    </button>
-                    <button
-                      className={`p-1 transition-colors ${activeChordIndex === i ? "text-[#0D1117] hover:text-[#0D1117]/60" : "text-[var(--text-dim)] hover:text-[#C0FC14]"}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        moveChord(i, 1)
-                      }}
-                      title="Move right"
-                      disabled={i === progression.length - 1}
-                    >
-                      <ChevronRight size={12} />
                     </button>
                     <button
                       className={`p-1 transition-colors ${activeChordIndex === i ? "text-[#0D1117] hover:text-[#FF2D7C]" : "text-[var(--text-dim)] hover:text-[#FF2D7C]"}`}
