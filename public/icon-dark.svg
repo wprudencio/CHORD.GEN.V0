@@ -1,0 +1,22 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- CHORD.GEN icon — cyberpunk terminal style -->
+  <rect width="512" height="512" rx="96" fill="#0D1117"/>
+  <!-- Grid background -->
+  <g stroke="#161B22" stroke-width="1">
+    <line x1="0" y1="128" x2="512" y2="128"/>
+    <line x1="0" y1="256" x2="512" y2="256"/>
+    <line x1="0" y1="384" x2="512" y2="384"/>
+    <line x1="128" y1="0" x2="128" y2="512"/>
+    <line x1="256" y1="0" x2="256" y2="512"/>
+    <line x1="384" y1="0" x2="384" y2="512"/>
+  </g>
+  <!-- Main text: C.G -->
+  <text x="256" y="290" text-anchor="middle" font-family="monospace, sans-serif" font-size="220" font-weight="bold" fill="#C0FC14" letter-spacing="-8">C.G</text>
+  <!-- Accent line under text -->
+  <line x1="156" y1="340" x2="356" y2="340" stroke="#C0FC14" stroke-width="4" stroke-linecap="round"/>
+  <!-- Bottom text -->
+  <text x="256" y="400" text-anchor="middle" font-family="monospace, sans-serif" font-size="40" fill="#9AAF88" letter-spacing="8">CHORD.GEN</text>
+  <!-- Corner accents -->
+  <path d="M40 80V40h40" stroke="#C0FC14" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M472 432v40h-40" stroke="#FF2D7C" stroke-width="6" stroke-linecap="round" fill="none"/>
+</svg>
