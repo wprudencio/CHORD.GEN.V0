@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Pencil, X, Plus, Trash2, GripVertical, Settings, Copy, Save, Download, Music, RotateCcw, Sun, Moon } from "lucide-react"
-import ThemeToggle from "./components/ThemeToggle"
 import {
   Dialog,
   DialogContent,
@@ -2884,7 +2883,6 @@ export default function ChordGenerator() {
                 <span className="cyber-mono text-[11px] md:text-[12px] font-[bolder] text-[var(--text-dim)] hidden sm:inline">{isPlaying ? "PLAYING" : "STOPPED"}</span>
               </div>
             </div>
-            <ThemeToggle />
             <button
               onClick={() => setConfigModalOpen(true)}
               className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
@@ -3458,7 +3456,13 @@ export default function ChordGenerator() {
           <div className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-3 font-[family-name:var(--font-mono)]">
             {/* Theme */}
             <button
-              onClick={() => { setConfigModalOpen(false); document.querySelector<HTMLButtonElement>('[title="Toggle theme"]')?.click() }}
+              onClick={() => {
+                setConfigModalOpen(false)
+                const isLight = document.documentElement.classList.contains("light")
+                const next = isLight ? "dark" : "light"
+                document.documentElement.classList.toggle("light", next === "light")
+                localStorage.setItem("theme", next)
+              }}
               className="flex flex-col items-center justify-center gap-2 p-5 bg-[var(--base-card)] border border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#C0FC14] hover:shadow-[0_0_16px_rgba(192,252,20,0.12)] hover:text-[#C0FC14] transition-all rounded min-h-[120px] group"
             >
               <Sun className="w-7 h-7 text-[var(--text-dim)] group-hover:text-[#C0FC14] transition-colors" />
