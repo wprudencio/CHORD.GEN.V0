@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Pencil, X, Plus, Trash2, GripVertical } from "lucide-react"
+import { Pencil, X, Plus, Trash2, GripVertical, Settings, Copy, Save, Download, Music, RotateCcw, Sun, Moon } from "lucide-react"
 import ThemeToggle from "./components/ThemeToggle"
 import {
   Dialog,
@@ -815,6 +815,7 @@ export default function ChordGenerator() {
   const [exportModalOpen, setExportModalOpen] = useState(false)
   const [exportLoopCount, setExportLoopCount] = useState(1)
   const [exportStatus, setExportStatus] = useState<"idle" | "rendering" | "done">("idle")
+  const [configModalOpen, setConfigModalOpen] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
 
   // Load everything from local storage on mount
@@ -2798,60 +2799,13 @@ export default function ChordGenerator() {
                 <span className="cyber-mono text-[11px] md:text-[12px] font-[bolder] text-[var(--text-dim)] hidden sm:inline">{isPlaying ? "PLAYING" : "STOPPED"}</span>
               </div>
             </div>
-            <div className="flex items-center gap-1 md:gap-1.5 shrink-0">
-              <ThemeToggle />
-              <button
-                onClick={exportProgression}
-                className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
-                title="Copy progression"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-                </svg>
-              </button>
-              <button
-                onClick={saveProgression}
-                className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
-                title="Save progression"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                  <polyline points="17 21 17 13 7 13 7 21" />
-                  <polyline points="7 3 7 8 15 8" />
-                </svg>
-              </button>
-              <button
-                onClick={exportMidi}
-                className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
-                title="Export MIDI"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setExportModalOpen(true)}
-                className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#14FCEB] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#14FCEB] hover:shadow-[0_0_12px_rgba(20,252,235,0.2)]"
-                title="Export WAV"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                </svg>
-              </button>
-              <button
-                onClick={resetSettings}
-                className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
-                title="Reset all settings"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="23 4 23 10 17 10" />
-                  <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
-                </svg>
-              </button>
-            </div>
+            <button
+              onClick={() => setConfigModalOpen(true)}
+              className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
+              title="Menu"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Main Display Area */}
@@ -3403,6 +3357,91 @@ export default function ChordGenerator() {
               UPDATE CHORD
             </button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Config Menu Modal */}
+      <Dialog open={configModalOpen} onOpenChange={(open) => { if (!open) setConfigModalOpen(false) }}>
+        <DialogContent className="bg-[var(--base-panel)] border-[#C0FC14]/30 text-[var(--text-primary)] max-w-[90vw] md:max-w-xs p-0 overflow-hidden" showCloseButton={true}>
+          <DialogHeader className="px-5 pt-5 pb-3 border-b border-[var(--base-border)]">
+            <DialogTitle className="text-[#C0FC14] cyber-mono cyber-glow-text tracking-widest text-sm flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              CONFIG
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2 font-[family-name:var(--font-mono)]">
+            {/* Theme */}
+            <button
+              onClick={() => { setConfigModalOpen(false); document.querySelector<HTMLButtonElement>('[title="Toggle theme"]')?.click() }}
+              className="w-full flex items-center gap-3 px-5 py-3 text-[var(--text-primary)] hover:bg-[var(--base-card)] hover:text-[#C0FC14] transition-all border-b border-[var(--base-border)] text-left"
+            >
+              <Sun className="w-4 h-4 text-[var(--text-dim)]" />
+              <div>
+                <div className="text-sm font-[600]">Toggle Theme</div>
+                <div className="text-[11px] text-[var(--text-dim)]">Dark / Light mode</div>
+              </div>
+            </button>
+
+            {/* Copy */}
+            <button
+              onClick={() => { exportProgression(); setConfigModalOpen(false) }}
+              className="w-full flex items-center gap-3 px-5 py-3 text-[var(--text-primary)] hover:bg-[var(--base-card)] hover:text-[#C0FC14] transition-all border-b border-[var(--base-border)] text-left"
+            >
+              <Copy className="w-4 h-4 text-[var(--text-dim)]" />
+              <div>
+                <div className="text-sm font-[600]">Copy Progression</div>
+                <div className="text-[11px] text-[var(--text-dim)]">Clipboard as text</div>
+              </div>
+            </button>
+
+            {/* Save */}
+            <button
+              onClick={() => { saveProgression(); setConfigModalOpen(false) }}
+              className="w-full flex items-center gap-3 px-5 py-3 text-[var(--text-primary)] hover:bg-[var(--base-card)] hover:text-[#C0FC14] transition-all border-b border-[var(--base-border)] text-left"
+            >
+              <Save className="w-4 h-4 text-[var(--text-dim)]" />
+              <div>
+                <div className="text-sm font-[600]">Save Progression</div>
+                <div className="text-[11px] text-[var(--text-dim)]">Store in library</div>
+              </div>
+            </button>
+
+            {/* MIDI */}
+            <button
+              onClick={() => { exportMidi(); setConfigModalOpen(false) }}
+              className="w-full flex items-center gap-3 px-5 py-3 text-[var(--text-primary)] hover:bg-[var(--base-card)] hover:text-[#C0FC14] transition-all border-b border-[var(--base-border)] text-left"
+            >
+              <Download className="w-4 h-4 text-[var(--text-dim)]" />
+              <div>
+                <div className="text-sm font-[600]">Export MIDI</div>
+                <div className="text-[11px] text-[var(--text-dim)]">.mid file download</div>
+              </div>
+            </button>
+
+            {/* WAV */}
+            <button
+              onClick={() => { setConfigModalOpen(false); setExportModalOpen(true) }}
+              className="w-full flex items-center gap-3 px-5 py-3 text-[var(--text-primary)] hover:bg-[var(--base-card)] hover:text-[#14FCEB] transition-all border-b border-[var(--base-border)] text-left"
+            >
+              <Music className="w-4 h-4 text-[var(--text-dim)]" />
+              <div>
+                <div className="text-sm font-[600]">Export WAV</div>
+                <div className="text-[11px] text-[var(--text-dim)]">Audio file render</div>
+              </div>
+            </button>
+
+            {/* Reset */}
+            <button
+              onClick={() => { resetSettings(); setConfigModalOpen(false) }}
+              className="w-full flex items-center gap-3 px-5 py-3 text-[var(--text-primary)] hover:bg-[var(--base-card)] hover:text-[#FF2D7C] transition-all text-left"
+            >
+              <RotateCcw className="w-4 h-4 text-[var(--text-dim)]" />
+              <div>
+                <div className="text-sm font-[600]">Reset Settings</div>
+                <div className="text-[11px] text-[var(--text-dim)]">Default values</div>
+              </div>
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

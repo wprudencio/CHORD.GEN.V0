@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHORD.GEN v0 — Feature Suggestions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --base-bg: #0D1117;
+    --base-panel: #161B22;
+    --base-card: #1C2333;
+    --base-border: #2A2F38;
+    --base-border-bright: #3D4452;
+    --text-primary: #E6EDF3;
+    --text-dim: #8B949E;
+    --text-muted: #6E7681;
+    --text-faint: #484F58;
+    --green: #C0FC14;
+    --pink: #FF2D7C;
+    --blue: #2B7FFF;
+    --yellow: #FCEB14;
+    --orange: #FF6B2B;
+    --purple: #B829FF;
+    --cyan: #14FCEB;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--base-bg);
+    color: var(--text-primary);
+    font-family: 'Chakra Petch', sans-serif;
+    min-height: 100vh;
+    background-image:
+      linear-gradient(rgba(192,252,20,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(192,252,20,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: var(--base-panel);
+    border: 1px solid var(--base-border);
+    margin-bottom: 28px;
+    position: relative;
+  }
+  header::before {
+    content: '////';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-faint);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+  .logo {
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 1px;
+  }
+  .version {
+    display: inline-block;
+    background: var(--orange);
+    color: #0D1117;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 1px 6px;
+    margin-left: 8px;
+    vertical-align: middle;
+    box-shadow: 0 0 8px rgba(255,107,43,0.5);
+  }
+  .status-dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    background: var(--green);
+    margin-right: 10px;
+    animation: pulse 1.5s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(192,252,20,0.6);
+    vertical-align: middle;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .header-status {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+  }
+  .header-center {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* TITLE SECTION */
+  .title-section {
+    text-align: center;
+    margin-bottom: 36px;
+    padding: 32px 20px;
+    border: 1px solid var(--base-border);
+    background: var(--base-panel);
+    position: relative;
+  }
+  .title-section::after {
+    content: '';
+    position: absolute;
+    top: 8px; left: 8px; right: 8px; bottom: 8px;
+    border: 1px solid rgba(192,252,20,0.08);
+    pointer-events: none;
+  }
+  .title-section h1 {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+  .title-section h1 span { color: var(--green); }
+  .title-section .subtitle {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    letter-spacing: 1px;
+  }
+  .title-section .subtitle .hl { color: var(--blue); }
+
+  /* SUMMARY BADGES */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .summary-item {
+    background: var(--base-panel);
+    border: 1px solid var(--base-border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .summary-item .icon {
+    font-size: 24px;
+    width: 40px; height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .summary-item .num {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .summary-item .label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  /* TABLE */
+  .table-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--base-border);
+    background: var(--base-panel);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    min-width: 700px;
+  }
+  thead {
+    background: var(--base-bg);
+    border-bottom: 2px solid var(--base-border);
+  }
+  thead th {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    padding: 14px 16px;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--base-border);
+  }
+  thead th:first-child { width: 40px; text-align: center; }
+  thead th:nth-child(2) { min-width: 200px; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--base-border);
+    transition: background 0.15s;
+  }
+  tbody tr:hover {
+    background: rgba(192,252,20,0.04);
+  }
+  tbody td {
+    padding: 14px 16px;
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  tbody td:first-child {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text-faint);
+    text-align: center;
+    font-weight: 700;
+  }
+
+  .feature-name {
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .feature-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    max-width: 400px;
+  }
+  .feature-loc {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* EFFORT / IMPACT PILLS */
+  .pill {
+    display: inline-block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .pill-effort-low { background: rgba(192,252,20,0.12); color: var(--green); border: 1px solid rgba(192,252,20,0.2); }
+  .pill-effort-med { background: rgba(255,107,43,0.12); color: var(--orange); border: 1px solid rgba(255,107,43,0.2); }
+  .pill-effort-high { background: rgba(255,45,124,0.12); color: var(--pink); border: 1px solid rgba(255,45,124,0.2); }
+
+  .impact-bar {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .impact-dot {
+    width: 12px; height: 12px;
+    border: 1px solid var(--text-faint);
+    background: transparent;
+  }
+  .impact-dot.filled {
+    background: var(--green);
+    border-color: var(--green);
+    box-shadow: 0 0 6px rgba(192,252,20,0.3);
+  }
+  .impact-dot.filled.pink { background: var(--pink); border-color: var(--pink); box-shadow: 0 0 6px rgba(255,45,124,0.3); }
+  .impact-dot.filled.orange { background: var(--orange); border-color: var(--orange); box-shadow: 0 0 6px rgba(255,107,43,0.3); }
+  .impact-dot.filled.blue { background: var(--blue); border-color: var(--blue); box-shadow: 0 0 6px rgba(43,127,255,0.3); }
+
+  /* TOP 3 BOX */
+  .top3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin-top: 32px;
+  }
+  .top3-card {
+    background: var(--base-card);
+    border: 1px solid var(--base-border);
+    padding: 20px;
+    position: relative;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .top3-card:hover {
+    border-color: var(--green);
+    box-shadow: 0 0 20px rgba(192,252,20,0.08);
+  }
+  .top3-card .medal {
+    font-size: 28px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .top3-card h3 {
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .top3-card p {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  .top3-card .tag {
+    display: inline-block;
+    margin-top: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 2px 10px;
+    background: rgba(192,252,20,0.1);
+    color: var(--green);
+    border: 1px solid rgba(192,252,20,0.15);
+  }
+
+  /* FOOTER */
+  footer {
+    margin-top: 40px;
+    padding: 16px 20px;
+    border: 1px solid var(--base-border);
+    background: var(--base-panel);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    letter-spacing: 1px;
+  }
+  footer span { color: var(--green); }
+
+  /* GLOW UTILS */
+  .glow-green { text-shadow: 0 0 12px rgba(192,252,20,0.3); }
+  .glow-pink { text-shadow: 0 0 12px rgba(255,45,124,0.3); }
+  .glow-blue { text-shadow: 0 0 12px rgba(43,127,255,0.3); }
+  .glow-orange { text-shadow: 0 0 12px rgba(255,107,43,0.3); }
+
+  @media (max-width: 640px) {
+    .container { padding: 12px 8px 40px; }
+    .title-section h1 { font-size: 20px; }
+    table { font-size: 13px; min-width: 0; }
+    thead th, tbody td { padding: 10px 10px; }
+    .feature-desc { max-width: 200px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- TOP BAR -->
+  <header>
+    <div class="header-center">
+      <span class="status-dot"></span>
+      <span class="logo">CHORD.GEN <span class="version">v.0</span></span>
+    </div>
+    <span class="header-status">FEATURE ROADMAP // SUGGESTIONS</span>
+  </header>
+
+  <!-- TITLE -->
+  <div class="title-section">
+    <h1><span>⟡</span> What To Build Next <span>⟡</span></h1>
+    <div class="subtitle">
+      <span class="hl">20 features</span> ranked by <span class="hl">impact</span> × <span class="hl">effort</span> &nbsp;│&nbsp; analyzed from <span class="hl">~3410</span> lines of existing code
+    </div>
+  </div>
+
+  <!-- SUMMARY BADGES -->
+  <div class="summary">
+    <div class="summary-item">
+      <div class="icon" style="color:var(--green)">⚡</div>
+      <div>
+        <div class="num" style="color:var(--green)">12</div>
+        <div class="label">Synth Types</div>
+      </div>
+    </div>
+    <div class="summary-item">
+      <div class="icon" style="color:var(--blue)">▤</div>
+      <div>
+        <div class="num" style="color:var(--blue)">14</div>
+        <div class="label">Drum Styles</div>
+      </div>
+    </div>
+    <div class="summary-item">
+      <div class="icon" style="color:var(--pink)">♩</div>
+      <div>
+        <div class="num" style="color:var(--pink)">13</div>
+        <div class="label">Synth Rhythms</div>
+      </div>
+    </div>
+    <div class="summary-item">
+      <div class="icon" style="color:var(--yellow)">⌂</div>
+      <div>
+        <div class="num" style="color:var(--yellow)">22</div>
+        <div class="label">Chord Types</div>
+      </div>
+    </div>
+    <div class="summary-item">
+      <div class="icon" style="color:var(--cyan)">⊞</div>
+      <div>
+        <div class="num" style="color:var(--cyan)">20</div>
+        <div class="label">Suggestions</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN TABLE -->
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Feature</th>
+          <th>Effort</th>
+          <th>Impact</th>
+          <th>Why It Matters</th>
+          <th>~LOC</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>
+            <div class="feature-name" style="color:var(--green)">MIDI Export</div>
+            <div class="feature-desc">Standard MIDI File (.mid) with correct note pitch, velocity, timing for DAW import</div>
+          </td>
+          <td><span class="pill pill-effort-low">Low</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Biggest DAW integration ask. Users can drag into Ableton/FL/Logic immediately.</td>
+          <td><span class="feature-loc">~120</span></td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>
+            <div class="feature-name" style="color:var(--green)">Undo / Redo</div>
+            <div class="feature-desc">Stack-based history for progression edits. Ctrl+Z / Ctrl+Shift+Z</div>
+          </td>
+          <td><span class="pill pill-effort-low">Low</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">One accidental edit loses work — undo fixes the #1 UX friction.</td>
+          <td><span class="feature-loc">~60</span></td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>
+            <div class="feature-name" style="color:var(--green)">Piano Roll Preview</div>
+            <div class="feature-desc">Mini canvas keyboard showing which notes of each chord are sounding</div>
+          </td>
+          <td><span class="pill pill-effort-med">Med</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Visual feedback is transformative — instantly see voicings & inversions.</td>
+          <td><span class="feature-loc">~200</span></td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>
+            <div class="feature-name" style="color:var(--blue)">Chord Function Labels</div>
+            <div class="feature-desc">Show [Tonic], [Subdominant], [Dominant], [Borrowed], ↗V beneath each chord</div>
+          </td>
+          <td><span class="pill pill-effort-low">Low</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Teaches harmony & gives instant context — great for learning.</td>
+          <td><span class="feature-loc">~40</span></td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>
+            <div class="feature-name" style="color:var(--blue)">True Random Engine</div>
+            <div class="feature-desc">Generate random chord progressions from scale with weighted quality control, not just presets</div>
+          </td>
+          <td><span class="pill pill-effort-med">Med</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Infinite variety beyond the 40 fixed presets. What "Generate" should feel like.</td>
+          <td><span class="feature-loc">~100</span></td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>
+            <div class="feature-name" style="color:var(--blue)">Swing / Shuffle</div>
+            <div class="feature-desc">Single slider delaying every other 16th note — affects drums + synth</div>
+          </td>
+          <td><span class="pill pill-effort-low">Low</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Swing changes the entire feel. Huge return for a single slider.</td>
+          <td><span class="feature-loc">~80</span></td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>
+            <div class="feature-name" style="color:var(--blue)">Tempo Automation / Fills</div>
+            <div class="feature-desc">Per-chord BPM changes, accent/fill on last beat of phrases</div>
+          </td>
+          <td><span class="pill pill-effort-med">Med</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Adds dynamics & life to loops. Makes progressions feel less robotic.</td>
+          <td><span class="feature-loc">~150</span></td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td>
+            <div class="feature-name" style="color:var(--orange)">More Styles</div>
+            <div class="feature-desc">Jazz, Ambient, Lo-fi, Worship, Bossa, Funk — pure data additions</div>
+          </td>
+          <td><span class="pill pill-effort-low">Low</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">5 styles is thin. Adding 5 more doubles musical range with ZERO code changes.</td>
+          <td><span class="feature-loc">~30</span></td>
+        </tr>
+        <tr>
+          <td>9</td>
+          <td>
+            <div class="feature-name" style="color:var(--orange)">Share as URL</div>
+            <div class="feature-desc">Base64-encoded progression in URL params — share with one click</div>
+          </td>
+          <td><span class="pill pill-effort-low">Low</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Viral potential — share progressions on Twitter/Reddit/Discord instantly.</td>
+          <td><span class="feature-loc">~50</span></td>
+        </tr>
+        <tr>
+          <td>10</td>
+          <td>
+            <div class="feature-name" style="color:var(--orange)">Delay / Echo Send FX</div>
+            <div class="feature-desc">Ping-pong stereo delay with feedback, tempo-synced</div>
+          </td>
+          <td><span class="pill pill-effort-med">Med</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Second aux effect beyond reverb. Adds space & rhythmic interest.</td>
+          <td><span class="feature-loc">~100</span></td>
+        </tr>
+        <tr>
+          <td>11</td>
+          <td>
+            <div class="feature-name" style="color:var(--orange)">Playback Progress Bar</div>
+            <div class="feature-desc">Horizontal timeline cursor moving across chords during playback</div>
+          </td>
+          <td><span class="pill pill-effort-low">Low</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Huge UX upgrade — see where you are in the progression at a glance.</td>
+          <td><span class="feature-loc">~60</span></td>
+        </tr>
+        <tr>
+          <td>12</td>
+          <td>
+            <div class="feature-name" style="color:var(--orange)">16th-Note Roll (Hi-hat)</div>
+            <div class="feature-desc">Toggle button for rapid hi-hat rolls — essential for electronic</div>
+          </td>
+          <td><span class="pill pill-effort-low">Low</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">House/techno staple. One button, huge vibe change.</td>
+          <td><span class="feature-loc">~30</span></td>
+        </tr>
+        <tr>
+          <td>13</td>
+          <td>
+            <div class="feature-name" style="color:var(--orange)">Progression History</div>
+            <div class="feature-desc">Auto-save last 20 generated progressions, browse & restore</div>
+          </td>
+          <td><span class="pill pill-effort-low">Low</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Regenerate too far? Step back to a previous good one.</td>
+          <td><span class="feature-loc">~50</span></td>
+        </tr>
+        <tr>
+          <td>14</td>
+          <td>
+            <div class="feature-name" style="color:var(--text-muted)">BPM Tap Button</div>
+            <div class="feature-desc">Tap along to set tempo — more intuitive than typing</div>
+          </td>
+          <td><span class="pill pill-effort-low">Low</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Feels natural. No more fumbling with number input.</td>
+          <td><span class="feature-loc">~30</span></td>
+        </tr>
+        <tr>
+          <td>15</td>
+          <td>
+            <div class="feature-name" style="color:var(--text-muted)">Bitcrusher / Ring Mod Synth</div>
+            <div class="feature-desc">2 new explicit synth types with distinct tonal character</div>
+          </td>
+          <td><span class="pill pill-effort-med">Med</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Expands sonic palette cheaply. Bitcrush adds instant lo-fi/glitch texture.</td>
+          <td><span class="feature-loc">~100</span></td>
+        </tr>
+        <tr>
+          <td>16</td>
+          <td>
+            <div class="feature-name" style="color:var(--text-muted)">Visual Polish Pass</div>
+            <div class="feature-desc">Smooth chord glide transitions, beat indicator, waveform preview in export</div>
+          </td>
+          <td><span class="pill pill-effort-med">Med</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Polishes the cyberpunk aesthetic further. Small touches, big impression.</td>
+          <td><span class="feature-loc">~80</span></td>
+        </tr>
+        <tr>
+          <td>17</td>
+          <td>
+            <div class="feature-name" style="color:var(--text-muted)">Copy / Paste Chords</div>
+            <div class="feature-desc">Select+copy root/type from one slot, paste into another</div>
+          </td>
+          <td><span class="pill pill-effort-low">Low</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Essential for building cyclic patterns quickly.</td>
+          <td><span class="feature-loc">~40</span></td>
+        </tr>
+        <tr>
+          <td>18</td>
+          <td>
+            <div class="feature-name" style="color:var(--text-muted)">Preset System</div>
+            <div class="feature-desc">Save/load named preset combos: synth + drum + reverb configs</div>
+          </td>
+          <td><span class="pill pill-effort-med">Med</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Lets users build their own starting points. Feels professional.</td>
+          <td><span class="feature-loc">~100</span></td>
+        </tr>
+        <tr>
+          <td>19</td>
+          <td>
+            <div class="feature-name" style="color:var(--text-muted)">Export as JSON</div>
+            <div class="feature-desc">Machine-readable progression data for API consumption</div>
+          </td>
+          <td><span class="pill pill-effort-low">Low</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Enables integrations, external tools, programmatic use.</td>
+          <td><span class="feature-loc">~15</span></td>
+        </tr>
+        <tr>
+          <td>20</td>
+          <td>
+            <div class="feature-name" style="color:var(--text-muted)">Shortcut Cheat Sheet</div>
+            <div class="feature-desc">Toggle overlay showing all keyboard shortcuts in-app</div>
+          </td>
+          <td><span class="pill pill-effort-low">Low</span></td>
+          <td><span class="impact-bar"><span class="impact-dot filled"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span><span class="impact-dot" style="border-color:var(--text-faint)"></span></span></td>
+          <td style="font-size:12px;color:var(--text-dim)">Power users love shortcuts. Makes the app feel complete.</td>
+          <td><span class="feature-loc">~30</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TOP 3 PICKS -->
+  <div style="margin-top:36px;">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:2px;margin-bottom:12px;text-transform:uppercase;">
+      <span style="color:var(--green)">//</span> TOP 3 RECOMMENDED FIRST
+    </div>
+    <div class="top3">
+      <div class="top3-card" style="border-color:rgba(192,252,20,0.3);box-shadow:0 0 24px rgba(192,252,20,0.06);">
+        <div class="medal">🥇</div>
+        <h3 style="color:var(--green)">MIDI Export</h3>
+        <p>~120 lines. One button. Users drag into Ableton / FL Studio / Logic. Biggest single feature gap vs professional tools.</p>
+        <span class="tag">~30 min build</span>
+      </div>
+      <div class="top3-card" style="border-color:rgba(43,127,255,0.3);box-shadow:0 0 24px rgba(43,127,255,0.06);">
+        <div class="medal">🥈</div>
+        <h3 style="color:var(--blue)">Undo / Redo</h3>
+        <p>~60 lines. Ctrl+Z / Shift+Ctrl+Z. Solves the #1 UX pain point — one wrong click = lost work.</p>
+        <span class="tag" style="border-color:rgba(43,127,255,0.2);color:var(--blue);background:rgba(43,127,255,0.1);">~15 min build</span>
+      </div>
+      <div class="top3-card" style="border-color:rgba(255,45,124,0.3);box-shadow:0 0 24px rgba(255,45,124,0.06);">
+        <div class="medal">🥉</div>
+        <h3 style="color:var(--pink)">Piano Roll Preview</h3>
+        <p>~200 lines. Canvas/SVG component showing a 12-note keyboard with lit-up notes per chord. Transforms the experience visually.</p>
+        <span class="tag" style="border-color:rgba(255,45,124,0.2);color:var(--pink);background:rgba(255,45,124,0.1);">~1-2 hour build</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <span>✦</span> CHORD.GEN v0 — Feature Suggestion Analysis &nbsp;│&nbsp; Generated from <span>3410</span> lines of TypeScript &nbsp;│&nbsp; <span>20</span> suggestions ranked by impact × effort <span>✦</span>
+  </footer>
+
+</div>
+
+</body>
+</html>
