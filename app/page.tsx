@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Pencil, X, Plus, Trash2, GripVertical } from "lucide-react"
-import ThemeToggle from "./components/ThemeToggle"
+import { Pencil, X, Plus, Trash2, GripVertical, Settings, Copy, Save, Download, Music, RotateCcw, Sun, Moon } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -815,6 +814,7 @@ export default function ChordGenerator() {
   const [exportModalOpen, setExportModalOpen] = useState(false)
   const [exportLoopCount, setExportLoopCount] = useState(1)
   const [exportStatus, setExportStatus] = useState<"idle" | "rendering" | "done">("idle")
+  const [configModalOpen, setConfigModalOpen] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
 
   // Load everything from local storage on mount
@@ -1990,20 +1990,105 @@ export default function ChordGenerator() {
     navigator.clipboard.writeText(text)
   }, [progression])
 
-  // Generate MIDI file (bonus feature)
+  // Generate MIDI file (Standard MIDI File Format 0)
   const exportMidi = useCallback(() => {
-    // Simple MIDI file generation
-    const chordNames = progression.map((c) => c.name).join(" | ")
-    const midiText = `CHORD PROGRESSION EXPORT\n========================\nKey: ${key} ${mode}\nStyle: ${style}\nBPM: ${settings.bpm}\nTime: ${settings.timeSignature}/4\n\nProgression:\n${chordNames}\n\nChord Details:\n${progression.map((c, i) => `${i + 1}. ${c.name} (${c.type})`).join("\n")}`
-    
-    const blob = new Blob([midiText], { type: "text/plain" })
+    if (progression.length === 0) return
+
+    const ticksPerBeat = 480
+    const beatsPerBar = settings.timeSignature
+    const stepsPerBar = beatsPerBar === 6 ? 12 : beatsPerBar * 4
+    const ticksPerStep = ticksPerBeat / 4
+    const stepsPerChord = stepsPerBar * settings.barsPerChord
+    const chordDurationTicks = stepsPerChord * ticksPerStep
+    const tempo = Math.round(60000000 / settings.bpm)
+
+    const freqToMidi = (freq: number): number => Math.round(69 + 12 * Math.log2(freq / 440))
+
+    const varLen = (val: number): number[] => {
+      const bytes: number[] = [val & 0x7F]
+      val >>= 7
+      while (val > 0) { bytes.unshift((val & 0x7F) | 0x80); val >>= 7 }
+      return bytes
+    }
+
+    type MidiEvent = { tick: number; data: number[] }
+    const events: MidiEvent[] = []
+
+    // Tempo meta
+    events.push({ tick: 0, data: [0xFF, 0x51, 0x03, (tempo >> 16) & 0xFF, (tempo >> 8) & 0xFF, tempo & 0xFF] })
+
+    // Track name meta
+    const trackName = `CHORD.GEN ${key} ${mode} ${style} ${settings.bpm}bpm`
+    const nameBytes = [...trackName].map(c => c.charCodeAt(0))
+    events.push({ tick: 0, data: [0xFF, 0x03, ...varLen(nameBytes.length), ...nameBytes] })
+
+    // Program change: Acoustic Grand Piano ch.0
+    events.push({ tick: 0, data: [0xC0, 0x00] })
+
+    let absoluteTick = 0
+    for (let ci = 0; ci < progression.length; ci++) {
+      const chord = progression[ci]
+      const noteLen = Math.round(chordDurationTicks * 0.85)
+
+      for (const freq of chord.frequencies) {
+        const n = freqToMidi(freq)
+        if (n < 0 || n > 127) continue
+        events.push({ tick: absoluteTick, data: [0x90, n, 0x64] })
+      }
+      for (const freq of chord.frequencies) {
+        const n = freqToMidi(freq)
+        if (n < 0 || n > 127) continue
+        events.push({ tick: absoluteTick + noteLen, data: [0x80, n, 0x40] })
+      }
+      absoluteTick += chordDurationTicks
+    }
+
+    // End of track
+    events.push({ tick: absoluteTick, data: [0xFF, 0x2F, 0x00] })
+
+    // Sort by absolute tick
+    events.sort((a, b) => a.tick - b.tick)
+
+    // Convert to delta-time track bytes
+    const trackBytes: number[] = []
+    let prev = 0
+    for (const ev of events) {
+      trackBytes.push(...varLen(ev.tick - prev), ...ev.data)
+      prev = ev.tick
+    }
+
+    // Build complete MIDI file with DataView (WAV exporter pattern)
+    const headerSize = 14
+    const trackHeaderSize = 8
+    const totalSize = headerSize + trackHeaderSize + trackBytes.length
+    const buf = new ArrayBuffer(totalSize)
+    const view = new DataView(buf)
+
+    // MThd header
+    view.setUint8(0, 0x4D); view.setUint8(1, 0x54); view.setUint8(2, 0x68); view.setUint8(3, 0x64)
+    view.setUint32(4, 6, false)     // chunk length (big-endian: false param in DataView means big-endian)
+    view.setUint16(8, 0, false)     // format 0
+    view.setUint16(10, 1, false)    // ntrks = 1
+    view.setUint16(12, ticksPerBeat, false) // ticks per quarter note
+
+    // MTrk header
+    view.setUint8(14, 0x4D); view.setUint8(15, 0x54); view.setUint8(16, 0x72); view.setUint8(17, 0x6B)
+    view.setUint32(18, trackBytes.length, false)
+
+    // Track data
+    const base = 22
+    for (let i = 0; i < trackBytes.length; i++) {
+      view.setUint8(base + i, trackBytes[i])
+    }
+
+    const blob = new Blob([buf], { type: "audio/midi" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `progression-${key}-${mode}.txt`
+    a.download = `progression-${key}-${mode}-${settings.bpm}bpm.mid`
     a.click()
     URL.revokeObjectURL(url)
-  }, [progression, key, mode, style, settings.bpm, settings.timeSignature])
+  }, [progression, key, mode, style, settings.bpm, settings.timeSignature, settings.barsPerChord])
 
   // Export WAV via OfflineAudioContext
   const exportWav = useCallback(async () => {
@@ -2798,60 +2883,13 @@ export default function ChordGenerator() {
                 <span className="cyber-mono text-[11px] md:text-[12px] font-[bolder] text-[var(--text-dim)] hidden sm:inline">{isPlaying ? "PLAYING" : "STOPPED"}</span>
               </div>
             </div>
-            <div className="flex items-center gap-1 md:gap-1.5 shrink-0">
-              <ThemeToggle />
-              <button
-                onClick={exportProgression}
-                className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
-                title="Copy progression"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-                </svg>
-              </button>
-              <button
-                onClick={saveProgression}
-                className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
-                title="Save progression"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                  <polyline points="17 21 17 13 7 13 7 21" />
-                  <polyline points="7 3 7 8 15 8" />
-                </svg>
-              </button>
-              <button
-                onClick={exportMidi}
-                className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
-                title="Export MIDI"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setExportModalOpen(true)}
-                className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#14FCEB] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#14FCEB] hover:shadow-[0_0_12px_rgba(20,252,235,0.2)]"
-                title="Export WAV"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                </svg>
-              </button>
-              <button
-                onClick={resetSettings}
-                className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
-                title="Reset all settings"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="23 4 23 10 17 10" />
-                  <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
-                </svg>
-              </button>
-            </div>
+            <button
+              onClick={() => setConfigModalOpen(true)}
+              className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
+              title="Menu"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Main Display Area */}
@@ -3403,6 +3441,85 @@ export default function ChordGenerator() {
               UPDATE CHORD
             </button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Config Menu Modal */}
+      <Dialog open={configModalOpen} onOpenChange={(open) => { if (!open) setConfigModalOpen(false) }}>
+        <DialogContent className="bg-[var(--base-panel)] border-[#C0FC14]/30 text-[var(--text-primary)] max-w-[95vw] md:max-w-xl p-0 overflow-hidden" showCloseButton={true}>
+          <DialogHeader className="px-5 pt-5 pb-3 border-b border-[var(--base-border)]">
+            <DialogTitle className="text-[#C0FC14] cyber-mono cyber-glow-text tracking-widest text-sm flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              CONFIG
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-3 font-[family-name:var(--font-mono)]">
+            {/* Theme */}
+            <button
+              onClick={() => {
+                setConfigModalOpen(false)
+                const isLight = document.documentElement.classList.contains("light")
+                const next = isLight ? "dark" : "light"
+                document.documentElement.classList.toggle("light", next === "light")
+                localStorage.setItem("theme", next)
+              }}
+              className="flex flex-col items-center justify-center gap-2 p-5 bg-[var(--base-card)] border border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#C0FC14] hover:shadow-[0_0_16px_rgba(192,252,20,0.12)] hover:text-[#C0FC14] transition-all rounded min-h-[120px] group"
+            >
+              <Sun className="w-7 h-7 text-[var(--text-dim)] group-hover:text-[#C0FC14] transition-colors" />
+              <div className="text-sm font-[700] group-hover:text-[#C0FC14]">Theme</div>
+              <div className="text-[10px] text-[var(--text-muted)] leading-tight">Dark / Light</div>
+            </button>
+
+            {/* Copy */}
+            <button
+              onClick={() => { exportProgression(); setConfigModalOpen(false) }}
+              className="flex flex-col items-center justify-center gap-2 p-5 bg-[var(--base-card)] border border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#C0FC14] hover:shadow-[0_0_16px_rgba(192,252,20,0.12)] hover:text-[#C0FC14] transition-all rounded min-h-[120px] group"
+            >
+              <Copy className="w-7 h-7 text-[var(--text-dim)] group-hover:text-[#C0FC14] transition-colors" />
+              <div className="text-sm font-[700] group-hover:text-[#C0FC14]">Copy</div>
+              <div className="text-[10px] text-[var(--text-muted)] leading-tight">Progression as text</div>
+            </button>
+
+            {/* Save */}
+            <button
+              onClick={() => { saveProgression(); setConfigModalOpen(false) }}
+              className="flex flex-col items-center justify-center gap-2 p-5 bg-[var(--base-card)] border border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#C0FC14] hover:shadow-[0_0_16px_rgba(192,252,20,0.12)] hover:text-[#C0FC14] transition-all rounded min-h-[120px] group"
+            >
+              <Save className="w-7 h-7 text-[var(--text-dim)] group-hover:text-[#C0FC14] transition-colors" />
+              <div className="text-sm font-[700] group-hover:text-[#C0FC14]">Save</div>
+              <div className="text-[10px] text-[var(--text-muted)] leading-tight">Store in library</div>
+            </button>
+
+            {/* MIDI */}
+            <button
+              onClick={() => { exportMidi(); setConfigModalOpen(false) }}
+              className="flex flex-col items-center justify-center gap-2 p-5 bg-[var(--base-card)] border border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#2B7FFF] hover:shadow-[0_0_16px_rgba(43,127,255,0.12)] hover:text-[#2B7FFF] transition-all rounded min-h-[120px] group"
+            >
+              <Download className="w-7 h-7 text-[var(--text-dim)] group-hover:text-[#2B7FFF] transition-colors" />
+              <div className="text-sm font-[700] group-hover:text-[#2B7FFF]">MIDI</div>
+              <div className="text-[10px] text-[var(--text-muted)] leading-tight">.mid file download</div>
+            </button>
+
+            {/* WAV */}
+            <button
+              onClick={() => { setConfigModalOpen(false); setExportModalOpen(true) }}
+              className="flex flex-col items-center justify-center gap-2 p-5 bg-[var(--base-card)] border border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#14FCEB] hover:shadow-[0_0_16px_rgba(20,252,235,0.12)] hover:text-[#14FCEB] transition-all rounded min-h-[120px] group"
+            >
+              <Music className="w-7 h-7 text-[var(--text-dim)] group-hover:text-[#14FCEB] transition-colors" />
+              <div className="text-sm font-[700] group-hover:text-[#14FCEB]">WAV</div>
+              <div className="text-[10px] text-[var(--text-muted)] leading-tight">Audio file render</div>
+            </button>
+
+            {/* Reset */}
+            <button
+              onClick={() => { resetSettings(); setConfigModalOpen(false) }}
+              className="flex flex-col items-center justify-center gap-2 p-5 bg-[var(--base-card)] border border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#FF2D7C] hover:shadow-[0_0_16px_rgba(255,45,124,0.12)] hover:text-[#FF2D7C] transition-all rounded min-h-[120px] group"
+            >
+              <RotateCcw className="w-7 h-7 text-[var(--text-dim)] group-hover:text-[#FF2D7C] transition-colors" />
+              <div className="text-sm font-[700] group-hover:text-[#FF2D7C]">Reset</div>
+              <div className="text-[10px] text-[var(--text-muted)] leading-tight">Default values</div>
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
