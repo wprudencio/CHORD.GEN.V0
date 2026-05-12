@@ -12,7 +12,7 @@ import {
   playClap as enginePlayClap,
   invalidateNoiseBuffer,
 } from "@/lib/audio/synth-engine"
-import { Pencil, X, Plus, Trash2, GripVertical, Settings, Copy, Save, Download, Music, RotateCcw, Sun, Moon } from "lucide-react"
+import { Pencil, X, Plus, Trash2, GripVertical, Settings, Copy, Save, Download, Music, RotateCcw, Sun, Moon, Link } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -527,24 +527,60 @@ export default function ChordGenerator() {
   const [exportStatus, setExportStatus] = useState<"idle" | "rendering" | "done">("idle")
   const [configModalOpen, setConfigModalOpen] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
 
-  // Load everything from local storage on mount
+  // Load config from URL hash or local storage on mount
   useEffect(() => {
-    const saved = localStorage.getItem("chord-gen-config")
-    if (saved) {
-      try {
-        const config = JSON.parse(saved)
+    let loadedFromUrl = false
+
+    // Check URL hash for shared config: #c=<base64>
+    try {
+      const hash = window.location.hash
+      const match = hash.match(/^#c=(.+)/)
+      if (match) {
+        const json = atob(match[1])
+        const config = JSON.parse(json)
         if (config.key) setKey(config.key)
         if (config.mode) setMode(config.mode)
         if (config.style) setStyle(config.style)
         if (config.settings) setSettings(config.settings)
         if (config.progression) {
-          setProgression(config.progression)
-          progressionRef.current = config.progression
+          // Recalculate frequencies in case they were stripped
+          const restored = config.progression.map((chord: { root: string; type: string; name?: string }) => ({
+            root: chord.root,
+            type: chord.type,
+            name: chord.name || chord.root + formatChordType(chord.type),
+            frequencies: getChordNotes(chord.root, chord.type, 3),
+          }))
+          setProgression(restored)
+          progressionRef.current = restored
         }
         if (config.savedProgressions) setSavedProgressions(config.savedProgressions)
-      } catch (e) {
-        console.error("Failed to load config", e)
+        loadedFromUrl = true
+        // Clean URL after loading
+        window.history.replaceState(null, "", window.location.pathname)
+      }
+    } catch (e) {
+      console.error("Failed to load config from URL", e)
+    }
+
+    if (!loadedFromUrl) {
+      const saved = localStorage.getItem("chord-gen-config")
+      if (saved) {
+        try {
+          const config = JSON.parse(saved)
+          if (config.key) setKey(config.key)
+          if (config.mode) setMode(config.mode)
+          if (config.style) setStyle(config.style)
+          if (config.settings) setSettings(config.settings)
+          if (config.progression) {
+            setProgression(config.progression)
+            progressionRef.current = config.progression
+          }
+          if (config.savedProgressions) setSavedProgressions(config.savedProgressions)
+        } catch (e) {
+          console.error("Failed to load config", e)
+        }
       }
     }
     setIsLoaded(true)
@@ -1406,6 +1442,26 @@ export default function ChordGenerator() {
 
 
 
+  // Share current config as link
+  const shareLink = useCallback(() => {
+    const shareConfig = {
+      key,
+      mode,
+      style,
+      settings,
+      progression: progression.map(({ root, type, name }) => ({ root, type, name })),
+    }
+    const json = JSON.stringify(shareConfig)
+    const encoded = btoa(json)
+    const url = `${window.location.origin}${window.location.pathname}#c=${encoded}`
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    }).catch(() => {
+      // Fallback: select and copy manually not needed, clipboard API handles
+    })
+  }, [key, mode, style, settings, progression])
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1448,6 +1504,13 @@ export default function ChordGenerator() {
                 <span className="cyber-mono text-[11px] md:text-[12px] font-[bolder] text-[var(--text-dim)] hidden sm:inline">{isPlaying ? "PLAYING" : "STOPPED"}</span>
               </div>
             </div>
+            <button
+              onClick={shareLink}
+              className={`p-1.5 md:p-2 transition-all border ${linkCopied ? "text-[#C0FC14] border-[#C0FC14] bg-[var(--base-card)] shadow-[0_0_12px_rgba(192,252,20,0.2)]" : "text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"}`}
+              title={linkCopied ? "Copied!" : "Share link"}
+            >
+              <Link className="w-4 h-4" />
+            </button>
             <button
               onClick={() => setConfigModalOpen(true)}
               className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
