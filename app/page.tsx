@@ -1482,9 +1482,7 @@ export default function ChordGenerator() {
                   <div className={`cyber-mono text-[11px] md:text-[12px] font-[bolder] mt-2 ${activeChordIndex === i ? "text-[#0D1117]/60" : "text-[var(--text-dim)] group-hover:text-[var(--text-muted)]"}`}>
                     {getChordTypeName(chord.type)}
                   </div>
-                  {activeChordIndex === i && (
-                    <div className="absolute top-2 right-2 w-2 h-2 bg-[var(--base-panel)]" />
-                  )}
+
                   <div className={`absolute top-1.5 right-1.5 flex items-center gap-0.5 transition-opacity z-10 ${activeChordIndex === i ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
                     <button
                       className={`p-1 transition-colors ${activeChordIndex === i ? "text-[#0D1117] hover:text-[#0D1117]/60" : "text-[var(--text-dim)] hover:text-[#C0FC14]"}`}
