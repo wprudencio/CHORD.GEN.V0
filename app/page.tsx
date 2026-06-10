@@ -394,6 +394,7 @@ type Settings = {
   barsPerChord: number
   drumsEnabled: boolean
   drumStyle: string
+  drumHalfTime: boolean
   chordVolume: number
   drumVolume: number
   reverbAmount: number
@@ -407,6 +408,7 @@ const DEFAULT_SETTINGS: Settings = {
   barsPerChord: 2,
   drumsEnabled: true,
   drumStyle: "basic",
+  drumHalfTime: false,
   chordVolume: 0.7,
   drumVolume: 0.6,
   reverbAmount: 0.4,
@@ -793,7 +795,9 @@ export default function ChordGenerator() {
 
       const drumPatterns = DRUM_STYLE_PATTERNS[settingsRef.current.drumStyle] || DRUM_STYLE_PATTERNS.basic
       const pattern = drumPatterns[String(settingsRef.current.timeSignature)] || drumPatterns["4"]
-      const patternStep = currentBeatRef.current % pattern.kick.length
+      const halfTime = settingsRef.current.drumHalfTime
+      const drumStep = halfTime ? Math.floor(currentBeatRef.current / 2) : currentBeatRef.current
+      const patternStep = drumStep % pattern.kick.length
 
       if (settingsRef.current.drumsEnabled) {
         if (pattern.kick[patternStep]) playKick(time)
@@ -1333,7 +1337,8 @@ export default function ChordGenerator() {
           const time = (loop * progression.length * totalStepsPerChord + ci * totalStepsPerChord + step) * stepDuration
 
           // Drums
-          const patternStep = step % drumPat.kick.length
+          const drumStep = settings.drumHalfTime ? Math.floor(step / 2) : step
+          const patternStep = drumStep % drumPat.kick.length
           if (settings.drumsEnabled) {
             if (drumPat.kick[patternStep]) playKick(time)
             if (drumPat.snare[patternStep]) playSnare(time)
@@ -1877,15 +1882,16 @@ export default function ChordGenerator() {
                 <span className="w-2 h-2 bg-[#C0FC14] shrink-0" />
                 <span className="cyber-mono text-[13px] text-[var(--text-primary)] font-[800] tracking-wider">DRUM CONFIG</span>
                 <span className="slash-divider text-[var(--text-muted)]">////</span>
-                <span className="cyber-mono text-[12px] text-[var(--text-muted)] uppercase hidden sm:inline font-[bolder]"><span className="text-[#FF2D7C]">Pattern</span> &middot; <span className="text-[#FF2D7C]">Level</span> &middot; <span className="text-[#FF2D7C]">Toggle</span></span>
+                <span className="cyber-mono text-[12px] text-[var(--text-muted)] uppercase hidden sm:inline font-[bolder]"><span className="text-[#FF2D7C]">Pattern</span> &middot; <span className="text-[#FF2D7C]">Level</span> &middot; <span className="text-[#FF2D7C]">Toggle</span> &middot; <span className="text-[#FF2D7C]">½T</span></span>
               </div>
               <div className="p-2 md:p-3">
-                <div className="hidden md:grid grid-cols-3 gap-2 mb-2 cyber-mono text-[12px] font-[bolder] text-[var(--text-muted)] px-0.5">
+                <div className="hidden md:grid grid-cols-4 gap-2 mb-2 cyber-mono text-[12px] font-[bolder] text-[var(--text-muted)] px-0.5">
                   <span>STYLE</span>
                   <span>VOLUME</span>
                   <span>ENABLE</span>
+                  <span>½ TIME</span>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div className="flex flex-col gap-1">
                     <span className="cyber-mono text-[11px] md:hidden font-[bolder] text-[var(--text-dim)] px-0.5">STYLE</span>
                     <div className="ctrl-wrapper">
@@ -1932,6 +1938,15 @@ export default function ChordGenerator() {
                       DRUMS {settings.drumsEnabled ? "ON" : "OFF"}
                     </button>
                   </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="cyber-mono text-[11px] md:hidden font-[bolder] text-[var(--text-dim)] px-0.5">½ TIME</span>
+                    <button
+                      onClick={() => setSettings((s) => ({ ...s, drumHalfTime: !s.drumHalfTime }))}
+                      className={`ctrl-toggle ${settings.drumHalfTime ? 'active' : 'inactive'}`}
+                    >
+                      ½ TIME {settings.drumHalfTime ? "ON" : "OFF"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1954,7 +1969,7 @@ export default function ChordGenerator() {
                       >
                         <div className="flex flex-col gap-0.5">
                           <span className="text-[var(--text-primary)]">{saved.chords.map((c) => c.name).join("  ")}</span>
-                           <span className="cyber-mono text-[10px] text-[var(--text-dim)]">{saved.key} {saved.mode}{saved.style ? ` · ${saved.style}` : ''}{saved.settings ? ` · ${saved.settings.bpm}bpm · ${saved.settings.timeSignature}${saved.settings.timeSignature === 6 ? '/8' : '/4'} · ${saved.settings.synthType}` : ''}</span>
+                            <span className="cyber-mono text-[10px] text-[var(--text-dim)]">{saved.key} {saved.mode}{saved.style ? ` · ${saved.style}` : ''}{saved.settings ? ` · ${saved.settings.bpm}bpm · ${saved.settings.timeSignature}${saved.settings.timeSignature === 6 ? '/8' : '/4'}${saved.settings.drumHalfTime ? ' · ½T' : ''} · ${saved.settings.synthType}` : ''}</span>
                         </div>
                       </button>
                       <button
