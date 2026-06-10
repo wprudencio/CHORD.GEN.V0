@@ -13,6 +13,8 @@ import {
   invalidateNoiseBuffer,
 } from "@/lib/audio/synth-engine"
 import { Pencil, X, Plus, Trash2, GripVertical, Settings, Copy, Save, Download, Music, RotateCcw, Sun, Moon, Link } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { Toaster } from "@/components/ui/toaster"
 import {
   Dialog,
   DialogContent,
@@ -528,6 +530,7 @@ export default function ChordGenerator() {
   const [configModalOpen, setConfigModalOpen] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+  const { toast } = useToast()
 
   // Load config from URL hash or local storage on mount
   useEffect(() => {
@@ -1457,10 +1460,11 @@ export default function ChordGenerator() {
     navigator.clipboard.writeText(url).then(() => {
       setLinkCopied(true)
       setTimeout(() => setLinkCopied(false), 2000)
+      toast({ title: "Link copied!", description: "Share link copied to clipboard" })
     }).catch(() => {
-      // Fallback: select and copy manually not needed, clipboard API handles
+      toast({ title: "Copy failed", description: "Could not copy link to clipboard", variant: "destructive" })
     })
-  }, [key, mode, style, settings, progression])
+  }, [key, mode, style, settings, progression, toast])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -2157,6 +2161,7 @@ export default function ChordGenerator() {
           </div>
         </DialogContent>
       </Dialog>
+      <Toaster />
     </div>
   )
 }
