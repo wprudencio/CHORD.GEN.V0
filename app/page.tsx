@@ -1461,7 +1461,7 @@ export default function ChordGenerator() {
     navigator.clipboard.writeText(url).then(() => {
       setLinkCopied(true)
       setTimeout(() => setLinkCopied(false), 2000)
-      toast({ title: "Link copied!", description: "Share link copied to clipboard" })
+      toast({ title: "Link copied!", description: "Share link copied to clipboard", variant: "success" })
     }).catch(() => {
       toast({ title: "Copy failed", description: "Could not copy link to clipboard", variant: "destructive" })
     })
