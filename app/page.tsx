@@ -12,7 +12,7 @@ import {
   playClap as enginePlayClap,
   invalidateNoiseBuffer,
 } from "@/lib/audio/synth-engine"
-import { Pencil, X, Plus, Trash2, GripVertical, Settings, Copy, Save, Download, Music, RotateCcw, Sun, Moon, Link } from "lucide-react"
+import { Pencil, X, Plus, Trash2, GripVertical, Settings, Copy, Save, Download, Music, RotateCcw, Sun, Moon, Link, Keyboard, Command } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import {
@@ -532,6 +532,7 @@ export default function ChordGenerator() {
   const [configModalOpen, setConfigModalOpen] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+  const [shortcutMode, setShortcutMode] = useState(false)
   const { toast } = useToast()
 
   // Load config from URL hash or local storage on mount
@@ -1489,6 +1490,9 @@ export default function ChordGenerator() {
       if (e.code === "KeyS" && (e.target as HTMLElement).tagName !== "INPUT") {
         saveProgression()
       }
+      if (e.code === "KeyK" && (e.target as HTMLElement).tagName !== "INPUT") {
+        setShortcutMode((prev) => !prev)
+      }
     }
 
     document.addEventListener("keydown", handleKeyDown)
@@ -1513,14 +1517,24 @@ export default function ChordGenerator() {
                 <span className={`w-2 h-2 shrink-0 ${isPlaying ? "bg-[#C0FC14] animate-pulse shadow-[0_0_8px_rgba(192,252,20,0.6)]" : "bg-[var(--text-faint)]"}`} />
                 <span className="cyber-mono text-[11px] md:text-[12px] font-[bolder] text-[var(--text-dim)] hidden sm:inline">{isPlaying ? "PLAYING" : "STOPPED"}</span>
               </div>
+              <button
+                onClick={() => setShortcutMode(!shortcutMode)}
+                className={`p-1.5 md:p-2 transition-all border ${shortcutMode ? "text-[#C0FC14] border-[#C0FC14] bg-[var(--base-card)] shadow-[0_0_12px_rgba(192,252,20,0.2)]" : "text-[var(--text-dim)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"}`}
+                title={shortcutMode ? "Hide shortcuts" : "Show shortcuts"}
+              >
+                <Keyboard className="w-4 h-4" />
+              </button>
             </div>
             <div className="flex items-center gap-1">
               <button
                 onClick={saveProgression}
-                className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
+                className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)] relative"
                 title="Save progression"
               >
                 <Save className="w-4 h-4" />
+                {shortcutMode && (
+                  <span className="absolute -top-1 -right-1 cyber-mono text-[7px] font-[900] bg-[#0D1117] text-[#C0FC14] px-0.5 py-0 leading-none border border-[#C0FC14]">S</span>
+                )}
               </button>
               <button
                 onClick={shareLink}
@@ -1538,6 +1552,31 @@ export default function ChordGenerator() {
               </button>
             </div>
           </div>
+
+          {/* Shortcut Help Overlay */}
+          {shortcutMode && (
+            <div className="bg-[var(--base-bg)] border-b border-[var(--base-border)] px-3 md:px-5 py-2">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Command className="w-3.5 h-3.5 text-[#C0FC14]" />
+                <span className="cyber-mono text-[11px] font-[800] text-[#C0FC14] tracking-wider">KEYBOARD SHORTCUTS</span>
+                <span className="text-[var(--base-border-bright)]">|</span>
+                <span className="cyber-mono text-[10px] text-[var(--text-muted)]">Press any key below</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 md:gap-2">
+                {[
+                  { key: "Space", action: "Play / Stop" },
+                  { key: "R", action: "Generate" },
+                  { key: "S", action: "Save" },
+                  { key: "K", action: "Toggle shortcuts" },
+                ].map((shortcut) => (
+                  <div key={shortcut.key} className="flex items-center gap-1.5 border border-[var(--base-border)] bg-[var(--base-panel)] px-2 py-1">
+                    <span className="cyber-mono text-[10px] font-[900] text-[#C0FC14] bg-[#0D1117] px-1 py-0.5 border border-[#C0FC14] leading-none">{shortcut.key}</span>
+                    <span className="cyber-mono text-[10px] text-[var(--text-muted)] leading-none">{shortcut.action}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Main Display Area */}
           <div className="cyber-panel m-2 md:m-4 md:mt-3 p-3 md:p-6 border border-[var(--base-border)] scanlines scanlines-strong">
@@ -1603,7 +1642,7 @@ export default function ChordGenerator() {
             <div className="grid grid-cols-2 gap-1.5">
               <button
                 onClick={isPlaying ? stopPlayback : startPlayback}
-                className={`transport-btn flex items-center justify-center gap-2.5 py-4 md:py-5 font-[900] uppercase text-sm md:text-lg tracking-widest transition-all border-2 min-h-[52px]
+                className={`transport-btn flex items-center justify-center gap-2.5 py-4 md:py-5 font-[900] uppercase text-sm md:text-lg tracking-widest transition-all border-2 min-h-[52px] relative
                   ${isPlaying 
                     ? "bg-[#FF2D7C] border-[#FF2D7C] text-[#0D1117] hover:shadow-[0_0_24px_rgba(255,45,124,0.4)]" 
                     : "bg-[#C0FC14] border-[#C0FC14] text-[#0D1117] hover:shadow-[0_0_24px_rgba(192,252,20,0.4)]"
@@ -1625,16 +1664,22 @@ export default function ChordGenerator() {
                     PLAY
                   </>
                 )}
+                {shortcutMode && (
+                  <span className="absolute top-1 right-1 cyber-mono text-[9px] font-[900] bg-[#0D1117] text-[#C0FC14] px-1 py-0.5 leading-none border border-[#C0FC14]">SPC</span>
+                )}
               </button>
               <button
                 onClick={generateProgression}
-                className="transport-btn flex items-center justify-center gap-2.5 py-4 md:py-5 bg-[#2B7FFF] border-2 border-[#2B7FFF] text-[#0D1117] font-[900] uppercase text-sm md:text-lg tracking-widest transition-all min-h-[52px] hover:shadow-[0_0_24px_rgba(43,127,255,0.4)]"
+                className="transport-btn flex items-center justify-center gap-2.5 py-4 md:py-5 bg-[#2B7FFF] border-2 border-[#2B7FFF] text-[#0D1117] font-[900] uppercase text-sm md:text-lg tracking-widest transition-all min-h-[52px] hover:shadow-[0_0_24px_rgba(43,127,255,0.4)] relative"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M23 4v6h-6M1 20v-6h6" />
                   <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
                 </svg>
                 GENERATE
+                {shortcutMode && (
+                  <span className="absolute top-1 right-1 cyber-mono text-[9px] font-[900] bg-[#0D1117] text-[#2B7FFF] px-1 py-0.5 leading-none border border-[#2B7FFF]">R</span>
+                )}
               </button>
             </div>
           </div>
