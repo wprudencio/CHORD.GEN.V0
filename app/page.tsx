@@ -926,14 +926,19 @@ export default function ChordGenerator() {
     const allNotes = NOTES
     const allModes = Object.keys(SCALES)
     const allStyles = Object.keys(STYLE_PROGRESSIONS)
+    const allSynths = ["pad", "pluck", "keys", "strings", "organ", "bell", "bass", "lead", "brass", "fm", "supersaw", "wobble"]
+    const allRhythms = Object.keys(SYNTH_RHYTHMS)
+    const allDrumStyles = ["basic", "basic1", "basic2", "basic3", "hiphop", "house", "trap", "dnb", "reggae", "shuffle", "bossa", "reggaeton", "click", "none"]
     const newKey = allNotes[Math.floor(Math.random() * allNotes.length)]
     const newMode = allModes[Math.floor(Math.random() * allModes.length)]
     const newStyle = allStyles[Math.floor(Math.random() * allStyles.length)]
+    const newSynth = allSynths[Math.floor(Math.random() * allSynths.length)]
+    const newRhythm = allRhythms[Math.floor(Math.random() * allRhythms.length)]
+    const newDrumStyle = allDrumStyles[Math.floor(Math.random() * allDrumStyles.length)]
     setKey(newKey)
     setMode(newMode)
     setStyle(newStyle)
-    // generateProgression will auto-run via effect or we can call it after state updates
-    // Since state updates are async, we need to generate with the new values directly
+    setSettings((prev) => ({ ...prev, synthType: newSynth, synthRhythm: newRhythm, drumStyle: newDrumStyle }))
     const modeFamily =
       newMode === "minor" || newMode === "dorian" || newMode === "phrygian" || newMode === "locrian" || newMode === "aeolian" || newMode === "harmonicMinor" || newMode === "melodicMinor" || newMode === "hungarian" || newMode === "persian"
         ? "minor"
@@ -962,7 +967,8 @@ export default function ChordGenerator() {
       currentBeatRef.current = 0
       arpNoteIndexRef.current = 0
     }
-  }, [])
+    toast({ title: "Full randomize!", description: `Key: ${newKey} · Mode: ${newMode} · Style: ${newStyle} · Synth: ${newSynth} · Rhythm: ${newRhythm} · Drums: ${newDrumStyle}`, variant: "success" })
+  }, [toast])
 
   const updateChord = useCallback((index: number, root: string, type: string) => {
     const frequencies = getChordNotes(root, type, 3)
