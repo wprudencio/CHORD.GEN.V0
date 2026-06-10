@@ -1077,7 +1077,8 @@ export default function ChordGenerator() {
     if (progression.length === 0) return
     const name = `${key} ${mode} - ${new Date().toLocaleTimeString()}`
     setSavedProgressions((prev) => [...prev, { name, key, mode, style, settings, chords: progression }])
-  }, [progression, key, mode, style, settings])
+    toast({ title: "Progression saved!", description: "Added to your saved library", variant: "success" })
+  }, [progression, key, mode, style, settings, toast])
 
   const loadProgression = useCallback((saved: { key: string; mode: string; style?: string; settings?: Settings; chords: Chord[] }) => {
     setKey(saved.key)
