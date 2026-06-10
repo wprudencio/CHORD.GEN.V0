@@ -26,27 +26,29 @@ function invalidateNoiseBuffer() {
   _noiseBuffer = null
 }
 
-// --- Node cleanup helper to prevent memory leaks ---
-function createNodeDisposer() {
-  const nodes: AudioNode[] = []
-  return {
-    track: <T extends AudioNode>(n: T): T => {
-      nodes.push(n)
-      return n
-    },
-    disconnectAll: () => {
-      nodes.forEach((n) => {
-        try {
-          n.disconnect()
-        } catch {
-          // Already disconnected or dead
+// --- Global node cleanup pool to prevent memory and CPU leaks ---
+const _nodeCleanupPool: Array<{ node: AudioNode; cleanupAt: number }> = []
+let _cleanupInterval: ReturnType<typeof setInterval> | null = null
+
+function scheduleNodeCleanup(node: AudioNode, cleanupAt: number) {
+  _nodeCleanupPool.push({ node, cleanupAt })
+  if (!_cleanupInterval) {
+    _cleanupInterval = setInterval(() => {
+      const now = performance.now()
+      for (let i = _nodeCleanupPool.length - 1; i >= 0; i--) {
+        if (now >= _nodeCleanupPool[i].cleanupAt) {
+          try { _nodeCleanupPool[i].node.disconnect() } catch {}
+          _nodeCleanupPool.splice(i, 1)
         }
-      })
-    },
+      }
+      if (_nodeCleanupPool.length === 0 && _cleanupInterval) {
+        clearInterval(_cleanupInterval)
+        _cleanupInterval = null
+      }
+    }, 500)
   }
 }
 
-// Wrapper that monkey-patches context methods to track nodes for cleanup
 const TRACKED_METHODS = [
   "createOscillator",
   "createGain",
@@ -63,35 +65,20 @@ const TRACKED_METHODS = [
   "createAnalyser",
 ] as const
 
-function withNodeCleanup(
-  ctx: BaseAudioContext,
-  fn: () => void,
-  cleanupDelayMs: number = 1000
-) {
-  const disposer = createNodeDisposer()
-  const originals = new Map<string, Function>()
+const _patchedContexts = new WeakSet<BaseAudioContext>()
+
+function patchContextForCleanup(ctx: BaseAudioContext) {
+  if (_patchedContexts.has(ctx)) return
+  _patchedContexts.add(ctx)
 
   for (const method of TRACKED_METHODS) {
-    const m = (ctx as any)[method]
-    if (typeof m === "function") {
-      const bound = m.bind(ctx)
-      originals.set(method, bound)
-      ;(ctx as any)[method] = (...args: any[]) => {
-        const node = bound(...args)
-        return disposer.track(node)
-      }
+    const original = (ctx as any)[method]
+    if (typeof original !== "function") continue
+    ;(ctx as any)[method] = function (...args: any[]) {
+      const node = original.apply(ctx, args)
+      scheduleNodeCleanup(node, performance.now() + 10000)
+      return node
     }
-  }
-
-  try {
-    fn()
-  } finally {
-    setTimeout(() => {
-      for (const [method, original] of originals) {
-        ;(ctx as any)[method] = original
-      }
-      disposer.disconnectAll()
-    }, cleanupDelayMs)
   }
 }
 
@@ -112,8 +99,8 @@ function makeSoftClipCurve(size: number = 256, drive: number = 1.5): Float32Arra
 // --- KICK: deep punch with sub resonance, beater click, compressed body ---
 export function playKick(ctx: AudioContext | OfflineAudioContext, dest: AudioNode, time: number, vol: number, reverbSend: AudioNode, revAmount: number) {
   if (vol < 0.001) return
+  patchContextForCleanup(ctx)
   const t = time
-  withNodeCleanup(ctx, () => {
     // Layer 1: Beater click — very short bandpass transient
     const clickBuf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.015), ctx.sampleRate)
     const clickData = clickBuf.getChannelData(0)
@@ -191,14 +178,14 @@ export function playKick(ctx: AudioContext | OfflineAudioContext, dest: AudioNod
     clickSrc.stop(t + 0.02)
     bodyOsc.stop(t + 0.45)
     subOsc.stop(t + 0.6)
-  }, 700)
+
 }
 
 // --- SNARE: transient crack + snare wire rattle + warm body ---
 export function playSnare(ctx: AudioContext | OfflineAudioContext, dest: AudioNode, time: number, vol: number, reverbSend: AudioNode, revAmount: number) {
   if (vol < 0.001) return
   const t = time
-  withNodeCleanup(ctx, () => {
+  patchContextForCleanup(ctx)
     // Layer 1: Sharp transient crack
     const crackBuf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.008), ctx.sampleRate)
     const crackData = crackBuf.getChannelData(0)
@@ -301,7 +288,7 @@ export function playSnare(ctx: AudioContext | OfflineAudioContext, dest: AudioNo
     wireSrc.stop(t + 0.2)
     bodySrc.stop(t + 0.16)
     shellOsc.stop(t + 0.15)
-  }, 400)
+
 }
 
 // --- HI-HAT: metallic sizzle with tight closed / breathy open ---
@@ -310,7 +297,7 @@ export function playHiHat(ctx: AudioContext | OfflineAudioContext, dest: AudioNo
   const t = time
   const decayTime = open ? 0.45 : 0.06
   const hVol = vol * (open ? 0.4 : 0.45)
-  withNodeCleanup(ctx, () => {
+  patchContextForCleanup(ctx)
     // Layer 1: Metallic noise — 6 bandpass filters at inharmonic ratios for metallic texture
     const noiseBuf = getNoiseBuffer(ctx, 2)
     const periods = [1, 1.414, 1.732, 2.236, 2.645, 3.0] // √2, √3, √5, √7, √7, etc.
@@ -389,14 +376,14 @@ export function playHiHat(ctx: AudioContext | OfflineAudioContext, dest: AudioNo
     env.connect(wetG)
     dryG.connect(dest)
     wetG.connect(reverbSend)
-  }, (decayTime + 0.1) * 1000)
+
 }
 
 // --- RIMSHOT: sharp, tight crack for percussion patterns ---
 export function playRim(ctx: AudioContext | OfflineAudioContext, dest: AudioNode, time: number, vol: number, reverbSend: AudioNode, revAmount: number) {
   if (vol < 0.001) return
   const t = time
-  withNodeCleanup(ctx, () => {
+  patchContextForCleanup(ctx)
     // Sharp transient
     const transBuf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.006), ctx.sampleRate)
     const transData = transBuf.getChannelData(0)
@@ -442,14 +429,14 @@ export function playRim(ctx: AudioContext | OfflineAudioContext, dest: AudioNode
     woodOsc.start(t)
     transSrc.stop(t + 0.008)
     woodOsc.stop(t + 0.035)
-  }, 100)
+
 }
 
 // --- CLAP: layered noise bursts for classic electronic clap ---
 export function playClap(ctx: AudioContext | OfflineAudioContext, dest: AudioNode, time: number, vol: number, reverbSend: AudioNode, revAmount: number) {
   if (vol < 0.001) return
   const t = time
-  withNodeCleanup(ctx, () => {
+  patchContextForCleanup(ctx)
     // Multiple micro-bursts for realistic clap texture
     const burstTimes = [0, 0.01, 0.02, 0.035]
     const mixGain = ctx.createGain()
@@ -496,7 +483,7 @@ export function playClap(ctx: AudioContext | OfflineAudioContext, dest: AudioNod
     tailHP.connect(wetG)
     dryG.connect(dest)
     wetG.connect(reverbSend)
-  }, 300)
+
 }
 
 
@@ -534,7 +521,7 @@ function applyReverb(ctx: BaseAudioContext, node: AudioNode, dest: AudioNode, re
 
 // --- PAD: lush evolving texture with detune, chorus, and slow filter ---
 export function playPadSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  withNodeCleanup(ctx, () => {
+  patchContextForCleanup(ctx)
     // Voice 1: 5 detuned saws + 1 triangle for richness
     const detuneCents = [-8, -3, -1, +1, +3, +8]  // wider spread for more chorus
     const types: OscillatorType[] = ["sawtooth", "sawtooth", "sawtooth", "sawtooth", "triangle", "sawtooth"]
@@ -588,12 +575,12 @@ export function playPadSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend:
     env.connect(wetG)
     dryG.connect(dest)
     wetG.connect(reverbSend)
-  }, duration * 1000 + 500)
+
 }
 
 // --- PLUCK: karplus-strong-like with noise burst + filter pluck ---
 export function playPluckSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  withNodeCleanup(ctx, () => {
+  patchContextForCleanup(ctx)
     // Noise burst for attack
     const noiseDur = 0.04
     const noiseBuf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * noiseDur), ctx.sampleRate)
@@ -655,12 +642,12 @@ export function playPluckSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSen
     noiseSrc.stop(time + noiseDur + 0.01)
     osc1.stop(time + duration + 0.1)
     osc2.stop(time + duration + 0.1)
-  }, duration * 1000 + 500)
+
 }
 
 // --- KEYS: FM electric piano (DX7-style bell-tone) ---
 export function playKeysSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  withNodeCleanup(ctx, () => {
+  patchContextForCleanup(ctx)
     // Carrier
     const carrier = ctx.createOscillator()
     carrier.type = "sine"
@@ -715,12 +702,12 @@ export function playKeysSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend
     carrier.stop(time + duration + 0.1)
     mod.stop(time + duration + 0.1)
     osc2.stop(time + duration + 0.1)
-  }, duration * 1000 + 500)
+
 }
 
 // --- STRINGS: lush ensemble with LFO vibrato ---
 export function playStringsSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  withNodeCleanup(ctx, () => {
+  patchContextForCleanup(ctx)
     const detuneCents = [-12, -6, -2, 0, +2, +6, +12]
     const filter = ctx.createBiquadFilter()
     filter.type = "lowpass"
@@ -768,12 +755,12 @@ export function playStringsSynth(ctx: BaseAudioContext, dest: AudioNode, reverbS
 
     vibrato.start(time)
     vibrato.stop(time + duration + 0.1)
-  }, duration * 1000 + 500)
+
 }
 
 // --- ORGAN: drawbar organ with key click and rotary sim ---
 export function playOrganSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  withNodeCleanup(ctx, () => {
+  patchContextForCleanup(ctx)
     // Drawbar harmonics with realistic ratios
     const drawbars = [
       { harmonic: 0.5, gain: 0.15 }, // sub
@@ -847,12 +834,12 @@ export function playOrganSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSen
     rotary.stop(time + duration + 0.1)
     clickSrc.start(time)
     clickSrc.stop(time + 0.005)
-  }, duration * 1000 + 500)
+
 }
 
 // --- BELL: FM bell with inharmonic partials + exponential decay ---
 export function playBellSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  withNodeCleanup(ctx, () => {
+  patchContextForCleanup(ctx)
     // FM pair 1: fundamental
     const car1 = ctx.createOscillator()
     car1.type = "sine"
@@ -915,12 +902,12 @@ export function playBellSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend
     car1.stop(time + duration + 0.1); mod1.stop(time + duration + 0.1)
     car2.stop(time + duration + 0.1); mod2.stop(time + duration + 0.1)
     body.stop(time + duration + 0.1)
-  }, duration * 1000 + 500)
+
 }
 
 // --- BASS: sub + pulse + drive with proper low-end ---
 export function playBassSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  withNodeCleanup(ctx, () => {
+  patchContextForCleanup(ctx)
     // Sub oscillator (one octave down for low-end weight)
     const sub = ctx.createOscillator()
     sub.type = "sine"
@@ -975,12 +962,12 @@ export function playBassSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend
     sub.stop(time + duration + 0.1)
     pulse.stop(time + duration + 0.1)
     oct.stop(time + duration + 0.1)
-  }, duration * 1000 + 500)
+
 }
 
 // --- LEAD: unison saw with filter envelope ---
 export function playLeadSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  withNodeCleanup(ctx, () => {
+  patchContextForCleanup(ctx)
     const detuneCents = [-7, -3, 0, +3, +7]
     const filter = ctx.createBiquadFilter()
     filter.type = "lowpass"
@@ -1024,12 +1011,12 @@ export function playLeadSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend
     env.connect(wetG)
     dryG.connect(dest)
     wetG.connect(reverbSend)
-  }, duration * 1000 + 500)
+
 }
 
 // --- BRASS: saw stack with bright attack + filter envelope ---
 export function playBrassSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  withNodeCleanup(ctx, () => {
+  patchContextForCleanup(ctx)
     const detuneCents = [-5, 0, +5]
     const filter = ctx.createBiquadFilter()
     filter.type = "lowpass"
@@ -1068,12 +1055,12 @@ export function playBrassSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSen
     env.connect(wetG)
     dryG.connect(dest)
     wetG.connect(reverbSend)
-  }, duration * 1000 + 500)
+
 }
 
 // --- FM: complex FM with modulator envelope ---
 export function playFMSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  withNodeCleanup(ctx, () => {
+  patchContextForCleanup(ctx)
     // Carrier
     const carrier = ctx.createOscillator()
     carrier.type = "sine"
@@ -1125,12 +1112,12 @@ export function playFMSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: 
     carrier.stop(time + duration + 0.1)
     mod1.stop(time + duration + 0.1)
     mod2.stop(time + duration + 0.1)
-  }, duration * 1000 + 500)
+
 }
 
 // --- SUPERSAW: 9 detuned saws with wide filter + chorus LFO ---
 export function playSupersawSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  withNodeCleanup(ctx, () => {
+  patchContextForCleanup(ctx)
     const detuneCents = [-20, -14, -8, -3, 0, +3, +8, +14, +20]
     const filter = ctx.createBiquadFilter()
     filter.type = "lowpass"
@@ -1185,12 +1172,12 @@ export function playSupersawSynth(ctx: BaseAudioContext, dest: AudioNode, reverb
 
     chorus.start(time)
     chorus.stop(time + duration + 0.1)
-  }, duration * 1000 + 500)
+
 }
 
 // --- WOBBLE: tempo-synced LFO on filter with distortion ---
 export function playWobbleSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number, bpm: number) {
-  withNodeCleanup(ctx, () => {
+  patchContextForCleanup(ctx)
     // Dual oscillators for thickness
     const osc1 = ctx.createOscillator()
     const osc2 = ctx.createOscillator()
@@ -1250,7 +1237,7 @@ export function playWobbleSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSe
     osc1.stop(time + duration + 0.1)
     osc2.stop(time + duration + 0.1)
     lfo.stop(time + duration + 0.1)
-  }, duration * 1000 + 500)
+
 }
 
 // ============================================================
