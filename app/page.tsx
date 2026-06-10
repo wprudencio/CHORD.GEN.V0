@@ -922,6 +922,48 @@ export default function ChordGenerator() {
     }
   }, [key, mode, style])
 
+  const generateAll = useCallback(() => {
+    const allNotes = NOTES
+    const allModes = Object.keys(SCALES)
+    const allStyles = Object.keys(STYLE_PROGRESSIONS)
+    const newKey = allNotes[Math.floor(Math.random() * allNotes.length)]
+    const newMode = allModes[Math.floor(Math.random() * allModes.length)]
+    const newStyle = allStyles[Math.floor(Math.random() * allStyles.length)]
+    setKey(newKey)
+    setMode(newMode)
+    setStyle(newStyle)
+    // generateProgression will auto-run via effect or we can call it after state updates
+    // Since state updates are async, we need to generate with the new values directly
+    const modeFamily =
+      newMode === "minor" || newMode === "dorian" || newMode === "phrygian" || newMode === "locrian" || newMode === "aeolian" || newMode === "harmonicMinor" || newMode === "melodicMinor" || newMode === "hungarian" || newMode === "persian"
+        ? "minor"
+        : "major"
+    const styleProgs = STYLE_PROGRESSIONS[newStyle] || STYLE_PROGRESSIONS.modern
+    const progressions = styleProgs[modeFamily]
+    const selectedProg = progressions[Math.floor(Math.random() * progressions.length)]
+    const scaleNotes = getScaleNotes(newKey, newMode)
+    const targetLength = Math.max(1, progressionRef.current.length || 4)
+    const newProgression: Chord[] = []
+    for (let i = 0; i < targetLength; i++) {
+      const template = selectedProg[i % selectedProg.length]
+      const rootNote = scaleNotes[(template.deg - 1 + Math.floor(i / selectedProg.length)) % scaleNotes.length]
+      const type = template.type
+      newProgression.push({
+        root: rootNote,
+        type,
+        name: rootNote + formatChordType(type),
+        frequencies: getChordNotes(rootNote, type, 3),
+      })
+    }
+    setProgression(newProgression)
+    progressionRef.current = newProgression
+    if (isPlayingRef.current) {
+      currentChordIndexRef.current = 0
+      currentBeatRef.current = 0
+      arpNoteIndexRef.current = 0
+    }
+  }, [])
+
   const updateChord = useCallback((index: number, root: string, type: string) => {
     const frequencies = getChordNotes(root, type, 3)
     const name = root + formatChordType(type)
@@ -1493,11 +1535,13 @@ export default function ChordGenerator() {
       if (e.code === "KeyK" && (e.target as HTMLElement).tagName !== "INPUT") {
         setShortcutMode((prev) => !prev)
       }
+      if (e.code === "KeyA" && (e.target as HTMLElement).tagName !== "INPUT") {
+        generateAll()
+      }
     }
 
     document.addEventListener("keydown", handleKeyDown)
-    return () => document.removeEventListener("keydown", handleKeyDown)
-  }, [stopPlayback, startPlayback, generateProgression, saveProgression])
+  }, [stopPlayback, startPlayback, generateProgression, saveProgression, generateAll])
 
   return (
     <div className="min-h-screen bg-[var(--base-bg)] text-[var(--text-primary)] font-[family-name:var(--font-display)] selection:bg-[#C0FC14] selection:text-[#0D1117] cyber-grid-bg">
@@ -1565,7 +1609,8 @@ export default function ChordGenerator() {
               <div className="flex flex-wrap gap-1.5 md:gap-2">
                 {[
                   { key: "Space", action: "Play / Stop" },
-                  { key: "R", action: "Generate" },
+                  { key: "R", action: "Generate chords" },
+                  { key: "A", action: "Generate all" },
                   { key: "S", action: "Save" },
                   { key: "K", action: "Toggle shortcuts" },
                 ].map((shortcut) => (
@@ -1638,11 +1683,11 @@ export default function ChordGenerator() {
               </div>
             </div>
 
-            {/* Transport — Play + Generate */}
-            <div className="grid grid-cols-2 gap-1.5">
+            {/* Transport — Play + Generate Chords + Generate All */}
+            <div className="grid grid-cols-3 gap-1.5">
               <button
                 onClick={isPlaying ? stopPlayback : startPlayback}
-                className={`transport-btn flex items-center justify-center gap-2.5 py-4 md:py-5 font-[900] uppercase text-sm md:text-lg tracking-widest transition-all border-2 min-h-[52px] relative
+                className={`transport-btn flex items-center justify-center gap-2.5 py-4 md:py-5 font-[900] uppercase text-sm md:text-base tracking-widest transition-all border-2 min-h-[52px] relative
                   ${isPlaying 
                     ? "bg-[#FF2D7C] border-[#FF2D7C] text-[#0D1117] hover:shadow-[0_0_24px_rgba(255,45,124,0.4)]" 
                     : "bg-[#C0FC14] border-[#C0FC14] text-[#0D1117] hover:shadow-[0_0_24px_rgba(192,252,20,0.4)]"
@@ -1670,15 +1715,28 @@ export default function ChordGenerator() {
               </button>
               <button
                 onClick={generateProgression}
-                className="transport-btn flex items-center justify-center gap-2.5 py-4 md:py-5 bg-[#2B7FFF] border-2 border-[#2B7FFF] text-[#0D1117] font-[900] uppercase text-sm md:text-lg tracking-widest transition-all min-h-[52px] hover:shadow-[0_0_24px_rgba(43,127,255,0.4)] relative"
+                className="transport-btn flex items-center justify-center gap-2.5 py-4 md:py-5 bg-[#2B7FFF] border-2 border-[#2B7FFF] text-[#0D1117] font-[900] uppercase text-sm md:text-base tracking-widest transition-all min-h-[52px] hover:shadow-[0_0_24px_rgba(43,127,255,0.4)] relative"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M23 4v6h-6M1 20v-6h6" />
                   <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
                 </svg>
-                GENERATE
+                CHORDS
                 {shortcutMode && (
                   <span className="absolute top-1 right-1 cyber-mono text-[9px] font-[900] bg-[#0D1117] text-[#2B7FFF] px-1 py-0.5 leading-none border border-[#2B7FFF]">R</span>
+                )}
+              </button>
+              <button
+                onClick={generateAll}
+                className="transport-btn flex items-center justify-center gap-2.5 py-4 md:py-5 bg-[#C0FC14] border-2 border-[#C0FC14] text-[#0D1117] font-[900] uppercase text-sm md:text-base tracking-widest transition-all min-h-[52px] hover:shadow-[0_0_24px_rgba(192,252,20,0.4)] relative"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M23 4v6h-6M1 20v-6h6" />
+                  <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+                </svg>
+                ALL
+                {shortcutMode && (
+                  <span className="absolute top-1 right-1 cyber-mono text-[9px] font-[900] bg-[#0D1117] text-[#C0FC14] px-1 py-0.5 leading-none border border-[#C0FC14]">A</span>
                 )}
               </button>
             </div>
