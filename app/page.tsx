@@ -1504,27 +1504,29 @@ export default function ChordGenerator() {
                 <span className="cyber-mono text-[11px] md:text-[12px] font-[bolder] text-[var(--text-dim)] hidden sm:inline">{isPlaying ? "PLAYING" : "STOPPED"}</span>
               </div>
             </div>
-            <button
-              onClick={saveProgression}
-              className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
-              title="Save progression"
-            >
-              <Save className="w-4 h-4" />
-            </button>
-            <button
-              onClick={shareLink}
-              className={`p-1.5 md:p-2 transition-all border ${linkCopied ? "text-[#C0FC14] border-[#C0FC14] bg-[var(--base-card)] shadow-[0_0_12px_rgba(192,252,20,0.2)]" : "text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"}`}
-              title={linkCopied ? "Copied!" : "Share link"}
-            >
-              <Link className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setConfigModalOpen(true)}
-              className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
-              title="Menu"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={saveProgression}
+                className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
+                title="Save progression"
+              >
+                <Save className="w-4 h-4" />
+              </button>
+              <button
+                onClick={shareLink}
+                className={`p-1.5 md:p-2 transition-all border ${linkCopied ? "text-[#C0FC14] border-[#C0FC14] bg-[var(--base-card)] shadow-[0_0_12px_rgba(192,252,20,0.2)]" : "text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"}`}
+                title={linkCopied ? "Copied!" : "Share link"}
+              >
+                <Link className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setConfigModalOpen(true)}
+                className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#C0FC14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#C0FC14] hover:shadow-[0_0_12px_rgba(192,252,20,0.2)]"
+                title="Menu"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Main Display Area */}
