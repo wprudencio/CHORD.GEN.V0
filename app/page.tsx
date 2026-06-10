@@ -1940,7 +1940,7 @@ export default function ChordGenerator() {
                       >
                         <div className="flex flex-col gap-0.5">
                           <span className="text-[var(--text-primary)]">{saved.chords.map((c) => c.name).join("  ")}</span>
-                          <span className="cyber-mono text-[10px] text-[var(--text-dim)]">{saved.key} {saved.mode}{saved.style ? ` · ${saved.style}` : ''}{saved.settings ? ` · ${saved.settings.bpm}bpm · ${saved.settings.timeSignature}/4 · ${saved.settings.synthType}` : ''}</span>
+                           <span className="cyber-mono text-[10px] text-[var(--text-dim)]">{saved.key} {saved.mode}{saved.style ? ` · ${saved.style}` : ''}{saved.settings ? ` · ${saved.settings.bpm}bpm · ${saved.settings.timeSignature}${saved.settings.timeSignature === 6 ? '/8' : '/4'} · ${saved.settings.synthType}` : ''}</span>
                         </div>
                       </button>
                       <button
