@@ -595,3 +595,741 @@ button { border-radius: 0; transition: all 150ms ease; }
   .ctrl-input  { font-size: 12px; padding: 12px 6px; }
   .ctrl-toggle { font-size: 12px; padding: 12px 12px; }
 }
+
+/* ============================================================
+   90s MODE — Windows 95/98 retro UI
+   Triggered by adding the `.mode-90s` class to <html> via JS.
+   Everything below scopes to that class so the cyberpunk mode
+   remains untouched.
+   ============================================================ */
+
+/* Classic Win95 teal desktop */
+.mode-90s {
+  --base-bg: #008080;
+  --base-panel: #C0C0C0;
+  --base-card: #C0C0C0;
+  --base-input: #FFFFFF;
+  --base-border: #808080;
+  --base-border-bright: #FFFFFF;
+
+  --text-primary: #000000;
+  --text-secondary: #1A1A1A;
+  --text-muted: #404040;
+  --text-dim: #606060;
+  --text-faint: #808080;
+
+  /* Win95 / 90s accents — MS Paint palette */
+  --neon-green: #008000;
+  --green-dim: rgba(0, 128, 0, 0.12);
+  --green-glow: rgba(0, 128, 0, 0.45);
+
+  --neon-pink: #C00000;
+  --pink-dim: rgba(192, 0, 0, 0.12);
+  --pink-glow: rgba(192, 0, 0, 0.45);
+
+  --neon-blue: #0000C0;
+  --blue-dim: rgba(0, 0, 192, 0.12);
+  --blue-glow: rgba(0, 0, 192, 0.45);
+
+  --neon-yellow: #FFFF00;
+  --yellow-dim: rgba(255, 255, 0, 0.18);
+  --yellow-glow: rgba(255, 255, 0, 0.5);
+
+  --neon-orange: #FF8000;
+  --orange-dim: rgba(255, 128, 0, 0.12);
+  --orange-glow: rgba(255, 128, 0, 0.45);
+
+  --neon-purple: #800080;
+  --purple-dim: rgba(128, 0, 128, 0.12);
+  --purple-glow: rgba(128, 0, 128, 0.45);
+
+  --neon-cyan: #008080;
+  --cyan-dim: rgba(0, 128, 128, 0.12);
+  --cyan-glow: rgba(0, 128, 128, 0.45);
+
+  --background: var(--base-bg);
+  --foreground: var(--text-primary);
+  --card: var(--base-card);
+  --card-foreground: var(--text-primary);
+  --popover: var(--base-card);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--neon-blue);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--base-panel);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--base-panel);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--neon-blue);
+  --accent-foreground: #FFFFFF;
+  --destructive: var(--neon-pink);
+  --destructive-foreground: #FFFFFF;
+  --border: var(--base-border);
+  --input: #FFFFFF;
+  --ring: var(--neon-blue);
+  --radius: 0px;
+  --sidebar: var(--base-panel);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--neon-blue);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: var(--neon-blue);
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: var(--base-border);
+  --sidebar-ring: var(--neon-blue);
+}
+
+/* Win95 desktop background — solid teal, no scanlines */
+.mode-90s body,
+.mode-90s .cyber-grid-bg {
+  background-color: #008080 !important;
+  background-image: none !important;
+}
+
+.mode-90s .cyber-panel {
+  background-color: #C0C0C0 !important;
+  background-image: none !important;
+}
+
+/* Strip all neon glows + scanlines + noise + flicker */
+.mode-90s .scanlines::before,
+.mode-90s .scanlines-strong::before,
+.mode-90s .noise-overlay::after { display: none !important; }
+.mode-90s .cyber-flicker { animation: none !important; }
+.mode-90s .glow-green,
+.mode-90s .glow-pink,
+.mode-90s .glow-blue,
+.mode-90s .glow-yellow,
+.mode-90s .glow-orange,
+.mode-90s .glow-purple,
+.mode-90s .glow-cyan { text-shadow: none !important; }
+
+/* Typography — pixel/CRT fonts for 90s feel */
+.mode-90s .cyber-display {
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', 'Pixelated MS Sans Serif', sans-serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  image-rendering: pixelated;
+}
+.mode-90s .cyber-mono {
+  font-family: var(--font-90s-mono), 'VT323', 'Lucida Console', monospace !important;
+  font-size: 18px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+/* === Win95 beveled border mixin === */
+.mode-90s .win-border-out {
+  border-style: solid;
+  border-width: 2px;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040;
+}
+.mode-90s .win-border-in {
+  border-style: solid;
+  border-width: 2px;
+  border-color: #808080 #FFFFFF #FFFFFF #808080;
+  box-shadow: inset 1px 1px 0 0 #404040, inset -1px -1px 0 0 #DFDFDF;
+}
+.mode-90s .win-border-thin-out {
+  border: 1px solid;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF;
+}
+.mode-90s .win-border-thin-in {
+  border: 1px solid;
+  border-color: #808080 #FFFFFF #FFFFFF #808080;
+}
+
+/* Title bar — the classic Win95 navy gradient with white text */
+.mode-90s .win-titlebar {
+  background: linear-gradient(90deg, #000080 0%, #1084D0 100%);
+  color: #FFFFFF;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  padding: 3px 4px 3px 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+.mode-90s .win-titlebar .win-title-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mode-90s .win-titlebar .win-btn {
+  background: #C0C0C0;
+  color: #000;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif;
+  font-size: 10px;
+  width: 16px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-style: solid;
+  border-width: 2px;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040;
+}
+.mode-90s .win-titlebar .win-btn:active {
+  border-color: #808080 #FFFFFF #FFFFFF #808080;
+  box-shadow: inset 1px 1px 0 0 #404040, inset -1px -1px 0 0 #DFDFDF;
+}
+
+/* Win95 3D buttons */
+.mode-90s .win-btn {
+  background: #C0C0C0;
+  color: #000;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif;
+  font-size: 11px;
+  padding: 4px 12px;
+  min-height: 30px;
+  border-style: solid;
+  border-width: 2px;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.mode-90s .win-btn:hover { background: #D4D0C8; }
+.mode-90s .win-btn:active,
+.mode-90s .win-btn[data-pressed="true"] {
+  border-color: #808080 #FFFFFF #FFFFFF #808080;
+  box-shadow: inset 1px 1px 0 0 #404040, inset -1px -1px 0 0 #DFDFDF;
+  padding: 5px 11px 3px 13px;
+}
+.mode-90s .win-btn:disabled {
+  color: #808080;
+  text-shadow: 1px 1px 0 #FFFFFF;
+  cursor: not-allowed;
+}
+
+/* Form controls (sunken inset) */
+.mode-90s .ctrl-wrapper {
+  background: #FFFFFF !important;
+  border: 2px solid !important;
+  border-color: #808080 #FFFFFF #FFFFFF #808080 !important;
+  box-shadow: inset 1px 1px 0 0 #404040, inset -1px -1px 0 0 #DFDFDF;
+  color: #000 !important;
+  border-radius: 0 !important;
+}
+.mode-90s .ctrl-wrapper:focus-within {
+  border-color: #808080 #FFFFFF #FFFFFF #808080 !important;
+  box-shadow: inset 1px 1px 0 0 #404040, inset -1px -1px 0 0 #DFDFDF;
+}
+.mode-90s .ctrl-select,
+.mode-90s .ctrl-input {
+  color: #000 !important;
+  background: transparent !important;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.mode-90s .ctrl-select option {
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: none;
+  background: #FFFFFF;
+  color: #000;
+}
+.mode-90s .ctrl-wrapper:has(.ctrl-select)::after {
+  border-top-color: #000 !important;
+}
+
+/* Range / trackbar — chunky 90s style */
+.mode-90s .ctrl-range-wrapper {
+  background: #FFFFFF !important;
+  border: 2px solid !important;
+  border-color: #808080 #FFFFFF #FFFFFF #808080 !important;
+  box-shadow: inset 1px 1px 0 0 #404040, inset -1px -1px 0 0 #DFDFDF;
+  padding: 8px;
+  min-height: 30px;
+}
+.mode-90s input[type="range"] {
+  background: #C0C0C0 !important;
+  height: 4px !important;
+  box-shadow: none !important;
+}
+.mode-90s input[type="range"]::-webkit-slider-thumb {
+  background: #C0C0C0 !important;
+  border: 2px solid !important;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040 !important;
+  width: 16px !important;
+  height: 24px !important;
+  border-radius: 0 !important;
+}
+.mode-90s input[type="range"]::-moz-range-thumb {
+  background: #C0C0C0 !important;
+  border: 2px solid !important;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+  width: 16px !important;
+  height: 24px !important;
+  border-radius: 0 !important;
+}
+
+/* Toggle buttons = Win95 checkbox-style */
+.mode-90s .ctrl-toggle {
+  background: #C0C0C0 !important;
+  color: #000 !important;
+  border: 2px solid !important;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  text-transform: none;
+  letter-spacing: 0;
+  min-height: 30px;
+  padding: 4px 8px;
+}
+.mode-90s .ctrl-toggle.active {
+  background: #C0C0C0 !important;
+  color: #000 !important;
+  border-color: #808080 #FFFFFF #FFFFFF #808080 !important;
+  box-shadow: inset 1px 1px 0 0 #404040, inset -1px -1px 0 0 #DFDFDF;
+  text-shadow: none;
+}
+.mode-90s .ctrl-toggle.inactive {
+  background: #C0C0C0 !important;
+  color: #000 !important;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+}
+.mode-90s .ctrl-toggle.active::before {
+  content: "■ ";
+  color: #000;
+}
+
+/* Chord cards — keep Win95 bevel border but let the rainbow Tailwind colors shine through */
+.mode-90s .chord-card {
+  border: 2px solid !important;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040;
+  text-shadow: none !important;
+  animation: none !important;
+}
+.mode-90s .chord-card.active {
+  border-color: #808080 #FFFFFF #FFFFFF #808080 !important;
+  box-shadow: inset 1px 1px 0 0 #404040, inset -1px -1px 0 0 #DFDFDF;
+  text-shadow: none !important;
+  animation: none !important;
+  filter: brightness(1.05) saturate(1.2);
+}
+
+/* Header/title bar of the main app */
+.mode-90s .app-titlebar {
+  background: linear-gradient(90deg, #000080 0%, #1084D0 100%) !important;
+  color: #FFFFFF !important;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif;
+  font-size: 11px;
+}
+
+/* Status bar at bottom */
+.mode-90s .app-statusbar {
+  background: #C0C0C0 !important;
+  color: #000 !important;
+  border: 2px solid !important;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif;
+  font-size: 11px;
+  text-shadow: none !important;
+}
+
+/* Panel/box containers — raised */
+.mode-90s .panel-out {
+  background: #C0C0C0 !important;
+  border: 2px solid !important;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040;
+}
+.mode-90s .panel-in {
+  background: #C0C0C0 !important;
+  border: 2px solid !important;
+  border-color: #808080 #FFFFFF #FFFFFF #808080 !important;
+  box-shadow: inset 1px 1px 0 0 #404040, inset -1px -1px 0 0 #DFDFDF;
+}
+
+/* Strip corner brackets in 90s mode */
+.mode-90s .cyber-corner::before,
+.mode-90s .cyber-corner::after { display: none !important; }
+
+/* Focus rings — dotted 90s style */
+.mode-90s *:focus-visible {
+  outline: 1px dotted #000 !important;
+  outline-offset: -4px !important;
+  box-shadow: none !important;
+}
+
+/* Saved chips */
+.mode-90s .saved-chip {
+  background: #FFFFFF !important;
+  color: #000 !important;
+  border: 2px solid !important;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif !important;
+  font-size: 11px !important;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.mode-90s .saved-chip:hover {
+  background: #000080 !important;
+  color: #FFFFFF !important;
+}
+
+/* Brand stamp — solid color block */
+.mode-90s .brand-stamp {
+  background: #000080 !important;
+  color: #FFFFFF !important;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif !important;
+  font-size: 10px !important;
+  box-shadow: none !important;
+}
+
+/* Slash dividers → ASCII separators */
+.mode-90s .slash-divider {
+  color: #000 !important;
+  text-shadow: none !important;
+  font-family: var(--font-90s-mono), 'VT323', monospace;
+}
+
+/* Scrollbars — chunky classic */
+.mode-90s ::-webkit-scrollbar { width: 16px; height: 16px; }
+.mode-90s ::-webkit-scrollbar-track {
+  background: #C0C0C0;
+  background-image:
+    repeating-linear-gradient(45deg, #C0C0C0 0, #C0C0C0 2px, #B0B0B0 2px, #B0B0B0 4px);
+}
+.mode-90s ::-webkit-scrollbar-thumb {
+  background: #C0C0C0 !important;
+  border: 2px solid !important;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040;
+  border-radius: 0 !important;
+}
+.mode-90s ::-webkit-scrollbar-button {
+  background: #C0C0C0;
+  border: 2px solid;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF;
+  display: block;
+  height: 16px;
+  width: 16px;
+}
+
+/* === Mode chooser (2 cards landing screen) === */
+.mode-90s .chooser-card {
+  background: #C0C0C0;
+  border: 3px solid;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040, 2px 2px 0 0 #000000;
+  cursor: pointer;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif;
+  color: #000;
+  transition: none;
+  text-align: left;
+  image-rendering: pixelated;
+}
+.mode-90s .chooser-card:hover {
+  background: #D4D0C8;
+}
+.mode-90s .chooser-card:active {
+  border-color: #808080 #FFFFFF #FFFFFF #808080;
+  box-shadow: inset 1px 1px 0 0 #404040, inset -1px -1px 0 0 #DFDFDF, 1px 1px 0 0 #000000;
+  transform: translate(1px, 1px);
+}
+
+.chooser-card {
+  background: var(--base-panel);
+  border: 2px solid var(--base-border);
+  cursor: pointer;
+  transition: all 200ms ease;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.chooser-card:hover {
+  border-color: var(--neon-green);
+  box-shadow: 0 0 24px var(--green-glow);
+  transform: translateY(-2px);
+}
+.chooser-card .chooser-thumb {
+  height: 180px;
+  background: var(--base-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 2px solid var(--base-border);
+  position: relative;
+  overflow: hidden;
+}
+.chooser-card .chooser-body { padding: 18px 20px 20px; }
+.chooser-card h2 {
+  font-family: var(--font-display), 'Chakra Petch', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.chooser-card p {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0;
+}
+.chooser-card .chooser-cta {
+  margin-top: 14px;
+  font-family: var(--font-mono), 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--neon-green);
+  font-weight: 700;
+}
+
+/* Tiny pixel-art preview blocks (CSS-only) */
+.pixel-preview {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  gap: 1px;
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+}
+.pixel-preview > div { width: 100%; height: 100%; }
+
+.pixel-preview-90s {
+  background: #008080;
+  width: 160px;
+  height: 110px;
+  border: 2px solid;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040;
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  grid-template-rows: repeat(11, 1fr);
+  image-rendering: pixelated;
+  position: relative;
+  overflow: hidden;
+}
+.pixel-preview-90s > div { width: 100%; height: 100%; }
+
+.pixel-preview-90s .pt-titlebar {
+  background: linear-gradient(90deg, #000080 0%, #1084D0 100%);
+}
+.pixel-preview-90s .pt-titlebar-end { background: #C0C0C0; }
+.pixel-preview-90s .pt-bar { background: #C0C0C0; }
+.pixel-preview-90s .pt-bar-dark { background: #808080; }
+.pixel-preview-90s .pt-bar-light { background: #FFFFFF; }
+.pixel-preview-90s .pt-text { background: #000080; }
+.pixel-preview-90s .pt-mint { background: #00AAAA; }
+.pixel-preview-90s .pt-screen { background: #000000; }
+.pixel-preview-90s .pt-screen-g { background: #00FF00; }
+
+/* === Transport buttons: override inline neon with chunky Win95 3D look === */
+.mode-90s .transport-btn {
+  background: #C0C0C0 !important;
+  color: #000 !important;
+  border: 2px solid !important;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040 !important;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif !important;
+  font-size: 12px !important;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  text-shadow: none !important;
+}
+.mode-90s .transport-btn:hover {
+  background: #D4D0C8 !important;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040 !important;
+}
+.mode-90s .transport-btn:active {
+  border-color: #808080 #FFFFFF #FFFFFF #808080 !important;
+  box-shadow: inset 1px 1px 0 0 #404040, inset -1px -1px 0 0 #DFDFDF !important;
+}
+/* The shortcut badge (R / G / SPC) — small pixelated black badge */
+.mode-90s .transport-btn > span {
+  background: #000 !important;
+  color: #FFFFFF !important;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif !important;
+  font-size: 8px !important;
+  border: 1px solid #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+/* === Panel title bars (CHORD CONFIG / SYNTH CONFIG / DRUM CONFIG) === */
+.mode-90s [class*="border-b"][class*="border-[var(--base-border)]"] {
+  background: linear-gradient(90deg, #000080 0%, #1084D0 100%) !important;
+  border-bottom: 1px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+.mode-90s [class*="border-b"][class*="border-[var(--base-border)]"] span {
+  color: #FFFFFF !important;
+}
+.mode-90s [class*="border-b"][class*="border-[var(--base-border)]"] .slash-divider {
+  color: #C0C0C0 !important;
+}
+
+/* The little green dot before each panel title */
+.mode-90s [class*="border-b"][class*="border-[var(--base-border)]"] > span.bg-\[\#C0FC14\] {
+  background: #FFFFFF !important;
+  width: 8px !important;
+  height: 8px !important;
+}
+
+/* === Top header bar (CHORD.GEN + status + actions) === */
+.mode-90s .bg-\[var\(--base-panel\)\].cyber-panel.px-3 {
+  background: #C0C0C0 !important;
+  background-image: none !important;
+  border: 2px solid !important;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040;
+}
+.mode-90s .bg-\[var\(--base-panel\)\].cyber-panel.px-3 .text-\[var\(--base-border-bright\)\] {
+  color: #808080 !important;
+}
+.mode-90s .bg-\[var\(--base-panel\)\].cyber-panel.px-3 .text-\[var\(--text-primary\)\] {
+  color: #000 !important;
+}
+/* Status indicator dot */
+.mode-90s .bg-\[var\(--base-panel\)\].cyber-panel.px-3 .w-2.h-2 {
+  width: 10px !important;
+  height: 10px !important;
+  box-shadow: none !important;
+}
+.mode-90s .bg-\[var\(--base-panel\)\].cyber-panel.px-3 .animate-pulse {
+  background: #00AA00 !important;
+  animation: none !important;
+}
+.mode-90s .bg-\[var\(--base-panel\)\].cyber-panel.px-3 .bg-\[var\(--text-faint\)\] {
+  background: #808080 !important;
+}
+
+/* Icon buttons in top bar (save/share/settings) */
+.mode-90s .bg-\[var\(--base-panel\)\].cyber-panel.px-3 button {
+  background: #C0C0C0 !important;
+  color: #000 !important;
+  border: 1px solid !important;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+  box-shadow: none !important;
+}
+.mode-90s .bg-\[var\(--base-panel\)\].cyber-panel.px-3 button:hover {
+  background: #D4D0C8 !important;
+  border-color: #808080 #FFFFFF #FFFFFF #808080 !important;
+  color: #000 !important;
+  text-shadow: none !important;
+}
+.mode-90s .bg-\[var\(--base-panel\)\].cyber-panel.px-3 button > span {
+  background: #000 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+/* === Footer / status bar === */
+.mode-90s .app-statusbar { background: #C0C0C0 !important; }
+
+/* === ADD CHORD card (dashed border placeholder) === */
+.mode-90s .border-dashed {
+  border-style: solid !important;
+  border: 2px dashed #808080 !important;
+  background: #FFFFFF !important;
+  color: #000 !important;
+}
+
+/* === Modal dialog content (Edit Chord / Config / Export) === */
+.mode-90s [class*="DialogContent"],
+.mode-90s [role="dialog"] {
+  background: #C0C0C0 !important;
+  border: 2px solid !important;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040, 2px 2px 0 0 #000000;
+  color: #000 !important;
+}
+.mode-90s [role="dialog"] h2,
+.mode-90s [role="dialog"] [class*="DialogTitle"] {
+  background: linear-gradient(90deg, #000080 0%, #1084D0 100%) !important;
+  color: #FFFFFF !important;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif !important;
+  font-size: 11px !important;
+  padding: 3px 6px !important;
+  margin: -16px -16px 12px !important;
+  text-shadow: none !important;
+  letter-spacing: 0;
+  display: flex;
+  align-items: center;
+}
+.mode-90s [role="dialog"] label {
+  color: #000 !important;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif !important;
+  font-size: 11px !important;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400 !important;
+}
+/* Update Chord button in Edit modal */
+.mode-90s [role="dialog"] button {
+  background: #C0C0C0 !important;
+  color: #000 !important;
+  border: 2px solid !important;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif !important;
+  font-size: 11px !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  text-shadow: none !important;
+}
+.mode-90s [role="dialog"] button:hover {
+  background: #D4D0C8 !important;
+}
+
+/* === Config menu tiles (icon grid) === */
+.mode-90s [role="dialog"] [class*="grid-cols-2"] button,
+.mode-90s [role="dialog"] [class*="grid-cols-3"] button {
+  background: #C0C0C0 !important;
+  color: #000 !important;
+  border: 2px solid !important;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040;
+  text-shadow: none !important;
+}
+.mode-90s [role="dialog"] [class*="grid-cols-2"] button:hover,
+.mode-90s [role="dialog"] [class*="grid-cols-3"] button:hover {
+  background: #D4D0C8 !important;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040;
+}
+.mode-90s [role="dialog"] [class*="grid-cols-2"] button *,
+.mode-90s [role="dialog"] [class*="grid-cols-3"] button * {
+  color: #000 !important;
+  text-shadow: none !important;
+}
+
+/* === Toaster (toast notifications) === */
+.mode-90s [role="status"],
+.mode-90s [data-sonner-toast] {
+  background: #C0C0C0 !important;
+  color: #000 !important;
+  border: 2px solid !important;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF !important;
+  box-shadow: inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040, 2px 2px 0 0 #000000;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif !important;
+  text-shadow: none !important;
+}
+.mode-90s [role="status"] *,
+.mode-90s [data-sonner-toast] * { color: #000 !important; text-shadow: none !important; }

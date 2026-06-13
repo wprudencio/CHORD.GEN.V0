@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import Script from 'next/script'
-import { Chakra_Petch, Share_Tech_Mono } from 'next/font/google'
+import { Chakra_Petch, Share_Tech_Mono, VT323, Press_Start_2P } from 'next/font/google'
 import './globals.css'
 
 const chakraPetch = Chakra_Petch({
@@ -14,6 +14,18 @@ const shareTechMono = Share_Tech_Mono({
   subsets: ['latin'],
   weight: ['400'],
   variable: '--font-mono',
+})
+
+const vt323 = VT323({
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-90s-mono',
+})
+
+const pressStart2P = Press_Start_2P({
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-90s-pixel',
 })
 
 const BASE_URL = 'https://chordgenv0.weslei.com'
@@ -117,7 +129,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${chakraPetch.variable} ${shareTechMono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${chakraPetch.variable} ${shareTechMono.variable} ${vt323.variable} ${pressStart2P.variable}`} suppressHydrationWarning>
       <body>
         <Script id="theme-init" strategy="beforeInteractive">
           {`(function(){try{var t=localStorage.getItem('theme');if(t==='light')document.documentElement.classList.add('light');}catch(e){}})();`}

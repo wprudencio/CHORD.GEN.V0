@@ -12,6 +12,15 @@ import {
   playClap as enginePlayClap,
   invalidateNoiseBuffer,
 } from "@/lib/audio/synth-engine"
+import {
+  playSynth90sNote,
+  playKick90s,
+  playSnare90s,
+  playHiHat90s,
+  playRim90s,
+  playClap90s,
+  invalidateNoiseBuffer as invalidateNoiseBuffer90s,
+} from "@/lib/audio/synth-90s"
 import { Pencil, X, Plus, Trash2, GripVertical, Settings, Copy, Save, Download, Music, RotateCcw, Sun, Moon, Link } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Toaster } from "@/components/ui/toaster"
@@ -484,8 +493,29 @@ const CHORD_COLOR_CYCLE = [
   { active: "bg-[#14FCEB] text-[#0D1117] border-[#14FCEB] chord-active-cyan shadow-[0_0_20px_rgba(20,252,235,0.3)]", inactive: "bg-[var(--base-panel)] border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#14FCEB]/80 hover:shadow-[0_0_12px_rgba(20,252,235,0.15)]" },
 ]
 
-function getChordColorClasses(index: number, isActive: boolean): string {
-  const c = CHORD_COLOR_CYCLE[index % CHORD_COLOR_CYCLE.length]
+// 90s MS Paint rainbow palette: bright, saturated, primary-school-textbook colors
+const CHORD_COLOR_CYCLE_90S = [
+  // Lime
+  { active: "bg-[#00FF00] text-[#000] border-[#00AA00]", inactive: "bg-[#CCFFCC] text-[#003300] border-[#008800] hover:bg-[#99FF99]" },
+  // Hot pink
+  { active: "bg-[#FF1493] text-[#FFFFFF] border-[#AA0055]", inactive: "bg-[#FFD1E5] text-[#660033] border-[#CC0066] hover:bg-[#FFA3CC]" },
+  // Electric blue
+  { active: "bg-[#0080FF] text-[#FFFFFF] border-[#003FAA]", inactive: "bg-[#CCEBFF] text-[#002F66] border-[#0055CC] hover:bg-[#99D6FF]" },
+  // Sun yellow
+  { active: "bg-[#FFD700] text-[#000] border-[#AA8800]", inactive: "bg-[#FFF4B3] text-[#665200] border-[#CCAA00] hover:bg-[#FFE966]" },
+  // Orange
+  { active: "bg-[#FF6F00] text-[#000] border-[#AA4A00]", inactive: "bg-[#FFDEB3] text-[#663300] border-[#CC5800] hover:bg-[#FFC680]" },
+  // Purple
+  { active: "bg-[#B400FF] text-[#FFFFFF] border-[#660099]", inactive: "bg-[#EECCFF] text-[#3D0059] border-[#8800CC] hover:bg-[#DD99FF]" },
+  // Cyan
+  { active: "bg-[#00CCCC] text-[#000] border-[#006666]", inactive: "bg-[#CCFFFF] text-[#003333] border-[#008080] hover:bg-[#99FFFF]" },
+  // Red
+  { active: "bg-[#FF0000] text-[#FFFFFF] border-[#AA0000]", inactive: "bg-[#FFCCCC] text-[#660000] border-[#CC0000] hover:bg-[#FF9999]" },
+]
+
+function getChordColorClasses(index: number, isActive: boolean, is90s: boolean = false): string {
+  const cycle = is90s ? CHORD_COLOR_CYCLE_90S : CHORD_COLOR_CYCLE
+  const c = cycle[index % cycle.length]
   return isActive ? c.active : c.inactive
 }
 
@@ -513,6 +543,8 @@ export default function ChordGenerator() {
   const [mode, setMode] = useState("major")
   const [style, setStyle] = useState("modern")
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
+  // uiMode: null = chooser shown on every page load; "cyber" | "90s" = active mode
+  const [uiMode, setUiMode] = useState<"cyber" | "90s" | null>(null)
 
   const [bpmInput, setBpmInput] = useState(settings.bpm.toString())
 
@@ -533,6 +565,32 @@ export default function ChordGenerator() {
   const [isLoaded, setIsLoaded] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
   const { toast } = useToast()
+
+  // Reflect uiMode on <html> so the .mode-90s CSS theme can take over
+  useEffect(() => {
+    const html = document.documentElement
+    if (uiMode === "90s") html.classList.add("mode-90s")
+    else html.classList.remove("mode-90s")
+  }, [uiMode])
+
+  const chooseMode = useCallback((m: "cyber" | "90s") => {
+    setUiMode(m)
+    // In 90s mode, default to a synth that exists in the 90s engine
+    if (m === "90s") {
+      setSettings((s) => {
+        const ninetySynths = ["fm", "pulse", "chip", "pcm", "analog", "tracker", "pluck90", "pad90"]
+        const synthType = ninetySynths.includes(s.synthType) ? s.synthType : "fm"
+        return { ...s, synthType }
+      })
+    } else {
+      // Going back to cyber, restore a default cyber synth if current is 90s-only
+      setSettings((s) => {
+        const ninetySynths = ["fm", "pulse", "chip", "pcm", "analog", "tracker", "pluck90", "pad90"]
+        const synthType = ninetySynths.includes(s.synthType) ? "pad" : s.synthType
+        return { ...s, synthType }
+      })
+    }
+  }, [])
 
   // Load config from URL hash or local storage on mount
   useEffect(() => {
@@ -619,6 +677,7 @@ export default function ChordGenerator() {
   const arpDirectionRef = useRef(1)
   const skipProgressionGenerationRef = useRef(false)
   const lastGenerateAllTimeRef = useRef(0)
+  const uiModeRef = useRef<"cyber" | "90s" | null>(null)
 
   // Keep refs in sync
   useEffect(() => {
@@ -628,6 +687,10 @@ export default function ChordGenerator() {
   useEffect(() => {
     settingsRef.current = settings
   }, [settings])
+
+  useEffect(() => {
+    uiModeRef.current = uiMode
+  }, [uiMode])
 
   const createReverb = useCallback(() => {
     if (!audioCtxRef.current) return null
@@ -693,12 +756,20 @@ export default function ChordGenerator() {
 
     const playSingleNote = useCallback((freq: number, time: number, duration: number, synthType: string) => {
       if (!audioCtxRef.current || !masterGainRef.current || !reverbNodeRef.current) return
-      playSynthNote(
-        audioCtxRef.current, masterGainRef.current, reverbNodeRef.current,
-        freq, time, duration, synthType,
-        settingsRef.current.chordVolume, settingsRef.current.reverbAmount,
-        settingsRef.current.bpm
-      )
+      if (uiModeRef.current === "90s") {
+        playSynth90sNote(
+          audioCtxRef.current, masterGainRef.current, reverbNodeRef.current,
+          freq, time, duration, synthType,
+          settingsRef.current.chordVolume, settingsRef.current.reverbAmount
+        )
+      } else {
+        playSynthNote(
+          audioCtxRef.current, masterGainRef.current, reverbNodeRef.current,
+          freq, time, duration, synthType,
+          settingsRef.current.chordVolume, settingsRef.current.reverbAmount,
+          settingsRef.current.bpm
+        )
+      }
     }, [])
 
   const playChord = useCallback(
@@ -751,25 +822,45 @@ export default function ChordGenerator() {
 
   const playKick = useCallback((time: number) => {
     if (!audioCtxRef.current || !masterGainRef.current || !reverbNodeRef.current) return
-    enginePlayKick(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 1.0, reverbNodeRef.current, settingsRef.current.reverbAmount)
+    if (uiModeRef.current === "90s") {
+      playKick90s(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 1.0, reverbNodeRef.current, settingsRef.current.reverbAmount)
+    } else {
+      enginePlayKick(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 1.0, reverbNodeRef.current, settingsRef.current.reverbAmount)
+    }
   }, [])
 
   const playSnare = useCallback((time: number) => {
     if (!audioCtxRef.current || !masterGainRef.current || !reverbNodeRef.current) return
-    enginePlaySnare(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.9, reverbNodeRef.current, settingsRef.current.reverbAmount)
+    if (uiModeRef.current === "90s") {
+      playSnare90s(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.9, reverbNodeRef.current, settingsRef.current.reverbAmount)
+    } else {
+      enginePlaySnare(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.9, reverbNodeRef.current, settingsRef.current.reverbAmount)
+    }
   }, [])
 
   const playHiHat = useCallback((time: number, open: boolean = false) => {
     if (!audioCtxRef.current || !masterGainRef.current || !reverbNodeRef.current) return
-    enginePlayHiHat(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * (open ? 0.3 : 0.35), reverbNodeRef.current, settingsRef.current.reverbAmount, open)
+    if (uiModeRef.current === "90s") {
+      playHiHat90s(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * (open ? 0.3 : 0.35), reverbNodeRef.current, settingsRef.current.reverbAmount, open)
+    } else {
+      enginePlayHiHat(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * (open ? 0.3 : 0.35), reverbNodeRef.current, settingsRef.current.reverbAmount, open)
+    }
   }, [])
   const playRim = useCallback((time: number) => {
     if (!audioCtxRef.current || !masterGainRef.current || !reverbNodeRef.current) return
-    enginePlayRim(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.5, reverbNodeRef.current, settingsRef.current.reverbAmount)
+    if (uiModeRef.current === "90s") {
+      playRim90s(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.5, reverbNodeRef.current, settingsRef.current.reverbAmount)
+    } else {
+      enginePlayRim(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.5, reverbNodeRef.current, settingsRef.current.reverbAmount)
+    }
   }, [])
   const playClap = useCallback((time: number) => {
     if (!audioCtxRef.current || !masterGainRef.current || !reverbNodeRef.current) return
-    enginePlayClap(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.7, reverbNodeRef.current, settingsRef.current.reverbAmount)
+    if (uiModeRef.current === "90s") {
+      playClap90s(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.7, reverbNodeRef.current, settingsRef.current.reverbAmount)
+    } else {
+      enginePlayClap(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.7, reverbNodeRef.current, settingsRef.current.reverbAmount)
+    }
   }, [])
 
   const scheduleNote = useCallback(
@@ -921,7 +1012,9 @@ export default function ChordGenerator() {
     const allNotes = NOTES
     const allModes = Object.keys(SCALES)
     const allStyles = Object.keys(STYLE_PROGRESSIONS)
-    const allSynths = ["pad", "pluck", "keys", "strings", "organ", "bell", "bass", "lead", "brass", "fm", "supersaw", "wobble"]
+    const allSynths = uiMode === "90s"
+      ? ["fm", "pulse", "chip", "pcm", "analog", "tracker", "pluck90", "pad90"]
+      : ["pad", "pluck", "keys", "strings", "organ", "bell", "bass", "lead", "brass", "fm", "supersaw", "wobble"]
     const allRhythms = Object.keys(SYNTH_RHYTHMS)
     const allDrumStyles = ["basic", "basic1", "basic2", "basic3", "hiphop", "house", "trap", "dnb", "reggae", "shuffle", "bossa", "reggaeton", "click", "none"]
     const newKey = allNotes[Math.floor(Math.random() * allNotes.length)]
@@ -1312,24 +1405,48 @@ export default function ChordGenerator() {
 
     // --- Synth note (uses shared engine) ---
     const playNote = (freq: number, time: number, duration: number, synthType: string) => {
-      playSynthNote(ctx, masterGain, convolver, freq, time, duration, synthType, settings.chordVolume, settings.reverbAmount, bpm)
+      if (uiMode === "90s") {
+        playSynth90sNote(ctx, masterGain, convolver, freq, time, duration, synthType, settings.chordVolume, settings.reverbAmount)
+      } else {
+        playSynthNote(ctx, masterGain, convolver, freq, time, duration, synthType, settings.chordVolume, settings.reverbAmount, bpm)
+      }
     }
 
     // --- Drum synthesis (uses shared engine) ---
     const playKick = (time: number) => {
-      enginePlayKick(ctx, masterGain, time, settings.drumVolume * 1.0, convolver, settings.reverbAmount)
+      if (uiMode === "90s") {
+        playKick90s(ctx, masterGain, time, settings.drumVolume * 1.0, convolver, settings.reverbAmount)
+      } else {
+        enginePlayKick(ctx, masterGain, time, settings.drumVolume * 1.0, convolver, settings.reverbAmount)
+      }
     }
     const playSnare = (time: number) => {
-      enginePlaySnare(ctx, masterGain, time, settings.drumVolume * 0.9, convolver, settings.reverbAmount)
+      if (uiMode === "90s") {
+        playSnare90s(ctx, masterGain, time, settings.drumVolume * 0.9, convolver, settings.reverbAmount)
+      } else {
+        enginePlaySnare(ctx, masterGain, time, settings.drumVolume * 0.9, convolver, settings.reverbAmount)
+      }
     }
     const playHiHat = (time: number, open = false) => {
-      enginePlayHiHat(ctx, masterGain, time, settings.drumVolume * (open ? 0.3 : 0.35), convolver, settings.reverbAmount, open)
+      if (uiMode === "90s") {
+        playHiHat90s(ctx, masterGain, time, settings.drumVolume * (open ? 0.3 : 0.35), convolver, settings.reverbAmount, open)
+      } else {
+        enginePlayHiHat(ctx, masterGain, time, settings.drumVolume * (open ? 0.3 : 0.35), convolver, settings.reverbAmount, open)
+      }
     }
     const playRim = (time: number) => {
-      enginePlayRim(ctx, masterGain, time, settings.drumVolume * 0.5, convolver, settings.reverbAmount)
+      if (uiMode === "90s") {
+        playRim90s(ctx, masterGain, time, settings.drumVolume * 0.5, convolver, settings.reverbAmount)
+      } else {
+        enginePlayRim(ctx, masterGain, time, settings.drumVolume * 0.5, convolver, settings.reverbAmount)
+      }
     }
     const playClap = (time: number) => {
-      enginePlayClap(ctx, masterGain, time, settings.drumVolume * 0.7, convolver, settings.reverbAmount)
+      if (uiMode === "90s") {
+        playClap90s(ctx, masterGain, time, settings.drumVolume * 0.7, convolver, settings.reverbAmount)
+      } else {
+        enginePlayClap(ctx, masterGain, time, settings.drumVolume * 0.7, convolver, settings.reverbAmount)
+      }
     }
 
     // --- Chord / arp helpers ---
@@ -1473,7 +1590,7 @@ export default function ChordGenerator() {
 
     setExportStatus("done")
     setExportModalOpen(false)
-  }, [progression, settings, key, mode, style, exportLoopCount])
+  }, [progression, settings, key, mode, style, exportLoopCount, uiMode])
 
   // Generate initial progression or auto-generate when key/mode/style changes
   const isFirstRender = useRef(true)
@@ -1538,6 +1655,7 @@ export default function ChordGenerator() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (uiModeRef.current === null) return
       if ((e.target as HTMLElement).tagName === "INPUT") return
       if (e.code === "Space") {
         e.preventDefault()
@@ -1556,6 +1674,10 @@ export default function ChordGenerator() {
       if (e.code === "KeyA") {
         generateAllRef.current()
       }
+      if (e.code === "KeyM") {
+        stopPlaybackRef.current()
+        setUiMode(null)
+      }
     }
 
     document.addEventListener("keydown", handleKeyDown)
@@ -1564,6 +1686,112 @@ export default function ChordGenerator() {
     }
   }, [])
 
+  // === MODE CHOOSER (landing screen on every page load) ===
+  if (uiMode === null) {
+    return (
+      <div className="min-h-screen bg-[var(--base-bg)] text-[var(--text-primary)] font-[family-name:var(--font-display)] selection:bg-[#C0FC14] selection:text-[#0D1117] cyber-grid-bg flex items-center justify-center p-4 md:p-8">
+        <div className="w-full max-w-5xl">
+          <div className="text-center mb-8 md:mb-12">
+            <div className="inline-flex items-baseline gap-2 md:gap-3 mb-3">
+              <h1 className="text-3xl md:text-5xl font-[900] tracking-tight text-[var(--text-primary)]">CHORD.GEN</h1>
+              <span className="brand-stamp text-[10px] md:text-[12px] font-[bolder]">v.0</span>
+            </div>
+            <p className="cyber-mono text-[12px] md:text-[14px] text-[var(--text-muted)]">CHOOSE YOUR INTERFACE</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-7">
+            {/* Cyberpunk card */}
+            <button
+              onClick={() => chooseMode("cyber")}
+              className="chooser-card group"
+              data-testid="mode-cyber"
+            >
+              <div className="chooser-thumb cyber-grid-bg">
+                <div className="pixel-preview" aria-hidden="true">
+                  <div className="bg-[#C0FC14]" />
+                  <div className="bg-[#0D1117]" />
+                  <div className="bg-[#FF2D7C]" />
+                  <div className="bg-[#0D1117]" />
+                  <div className="bg-[#0D1117]" />
+                  <div className="bg-[#2B7FFF]" />
+                  <div className="bg-[#0D1117]" />
+                  <div className="bg-[#FCEB14]" />
+                  <div className="bg-[#0D1117]" />
+                  <div className="bg-[#C0FC14]" />
+                  <div className="bg-[#0D1117]" />
+                  <div className="bg-[#0D1117]" />
+                  <div className="bg-[#B829FF]" />
+                  <div className="bg-[#14FCEB]" />
+                  <div className="bg-[#0D1117]" />
+                  <div className="bg-[#FF6B2B]" />
+                  <div className="bg-[#0D1117]" />
+                  <div className="bg-[#0D1117]" />
+                  <div className="bg-[#C0FC14]" />
+                  <div className="bg-[#FF2D7C]" />
+                  <div className="bg-[#0D1117]" />
+                  <div className="bg-[#2B7FFF]" />
+                  <div className="bg-[#0D1117]" />
+                  <div className="bg-[#FCEB14]" />
+                  <div className="bg-[#0D1117]" />
+                  <div className="bg-[#B829FF]" />
+                  <div className="bg-[#14FCEB]" />
+                  <div className="bg-[#0D1117]" />
+                  <div className="bg-[#FF6B2B]" />
+                  <div className="bg-[#0D1117]" />
+                  <div className="bg-[#C0FC14]" />
+                  <div className="bg-[#0D1117]" />
+                </div>
+              </div>
+              <div className="chooser-body">
+                <h2 className="text-[var(--neon-green)]">CYBERPUNK</h2>
+                <p>Dark neon UI, scanlines, and glow. Modern Web Audio synths with deep modulation, lush reverb, and cinematic pads.</p>
+                <div className="chooser-cta">▶ LAUNCH</div>
+              </div>
+            </button>
+
+            {/* 90s card */}
+            <button
+              onClick={() => chooseMode("90s")}
+              className="chooser-card group"
+              data-testid="mode-90s"
+              style={{ background: "#C0C0C0", color: "#000", border: "3px solid", borderColor: "#FFFFFF #808080 #808080 #FFFFFF", boxShadow: "inset 1px 1px 0 0 #DFDFDF, inset -1px -1px 0 0 #404040, 2px 2px 0 0 #000000", imageRendering: "pixelated" }}
+            >
+              <div className="chooser-thumb" style={{ background: "#008080", borderBottom: "2px solid #FFFFFF" }}>
+                <div className="pixel-preview-90s" aria-hidden="true">
+                  {/* Row 0 — title bar */}
+                  <div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar-end" />
+                  {/* Row 1 — title bar + close box */}
+                  <div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-titlebar" /><div className="pt-bar-dark" />
+                  {/* Row 2 — mint menubar */}
+                  <div className="pt-mint" /><div className="pt-mint" /><div className="pt-mint" /><div className="pt-mint" /><div className="pt-mint" /><div className="pt-mint" /><div className="pt-mint" /><div className="pt-mint" /><div className="pt-mint" /><div className="pt-mint" /><div className="pt-mint" /><div className="pt-mint" /><div className="pt-mint" /><div className="pt-mint" /><div className="pt-mint" /><div className="pt-mint" />
+                  {/* Row 3-7 — desktop with windows */}
+                  <div className="pt-bar" /><div className="pt-bar-light" /><div className="pt-bar" /><div className="pt-bar-light" /><div className="pt-bar" /><div className="pt-bar-light" /><div className="pt-bar" /><div className="pt-bar-light" /><div className="pt-bar" /><div className="pt-bar-light" /><div className="pt-bar" /><div className="pt-bar-light" /><div className="pt-bar" /><div className="pt-bar-light" /><div className="pt-bar" /><div className="pt-bar-light" />
+                  <div className="pt-bar-light" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-screen-g" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-screen-g" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-screen-g" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-bar" />
+                  <div className="pt-bar" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-screen-g" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-screen-g" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-screen-g" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-bar-light" />
+                  <div className="pt-bar-light" /><div className="pt-screen" /><div className="pt-screen-g" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-screen-g" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-screen-g" /><div className="pt-screen" /><div className="pt-screen" /><div className="pt-screen-g" /><div className="pt-screen" /><div className="pt-screen-g" /><div className="pt-screen" /><div className="pt-bar" />
+                  <div className="pt-bar" /><div className="pt-bar-light" /><div className="pt-bar" /><div className="pt-bar-light" /><div className="pt-bar" /><div className="pt-bar-light" /><div className="pt-bar" /><div className="pt-bar-light" /><div className="pt-bar" /><div className="pt-bar-light" /><div className="pt-bar" /><div className="pt-bar-light" /><div className="pt-bar" /><div className="pt-bar-light" /><div className="pt-bar" /><div className="pt-bar-light" />
+                  {/* Row 8 — taskbar */}
+                  <div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar-light" /><div className="pt-bar-light" /><div className="pt-bar" /><div className="pt-bar" /><div className="pt-text" /><div className="pt-text" /><div className="pt-text" /><div className="pt-text" /><div className="pt-text" /><div className="pt-text" /><div className="pt-bar" /><div className="pt-bar" />
+                  {/* Row 9 — taskbar */}
+                  <div className="pt-bar-light" /><div className="pt-bar-light" /><div className="pt-bar-light" /><div className="pt-bar-light" /><div className="pt-bar" /><div className="pt-bar-light" /><div className="pt-bar-light" /><div className="pt-bar-light" /><div className="pt-bar-light" /><div className="pt-bar-light" /><div className="pt-bar-light" /><div className="pt-bar-light" /><div className="pt-bar-light" /><div className="pt-bar-light" /><div className="pt-bar-light" /><div className="pt-bar-light" />
+                  {/* Row 10 — clock */}
+                  <div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar" /><div className="pt-bar" />
+                </div>
+              </div>
+              <div className="chooser-body" style={{ background: "#C0C0C0", color: "#000" }}>
+                <h2 style={{ fontFamily: "var(--font-90s-pixel), 'MS Sans Serif', sans-serif", fontSize: "16px", color: "#000" }}>WINDOWS 95 / 98</h2>
+                <p style={{ color: "#000", fontFamily: "var(--font-90s-pixel), 'MS Sans Serif', sans-serif", fontSize: "11px" }}>Chunky 3D buttons, gray title bars, and CRT pixel fonts. FM synths, TR-909 style drums, and 16-bit PCM sounds from the golden era of computer music.</p>
+                <div className="chooser-cta" style={{ color: "#000080", fontFamily: "var(--font-90s-pixel), 'MS Sans Serif', sans-serif" }}>▶ LAUNCH</div>
+              </div>
+            </button>
+          </div>
+
+          <p className="text-center cyber-mono text-[10px] md:text-[11px] text-[var(--text-faint)] mt-6 md:mt-8">YOU CAN SWITCH MODES ANY TIME FROM THE CONFIG MENU</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-[var(--base-bg)] text-[var(--text-primary)] font-[family-name:var(--font-display)] selection:bg-[#C0FC14] selection:text-[#0D1117] cyber-grid-bg">
       <div className="max-w-7xl mx-auto p-1 md:p-4 lg:p-8 min-h-screen flex flex-col">
@@ -1571,7 +1799,7 @@ export default function ChordGenerator() {
         <div className="bg-[var(--base-panel)] border border-[var(--base-border)] overflow-hidden">
           
           {/* Top Bar — CHORD.GEN + Status + Actions */}
-          <div className="bg-[var(--base-panel)] cyber-panel px-3 md:px-5 py-2.5 flex items-center justify-between gap-3 border border-[var(--base-border)]">
+          <div className="app-titlebar bg-[var(--base-panel)] cyber-panel px-3 md:px-5 py-2.5 flex items-center justify-between gap-3 border border-[var(--base-border)]">
             <div className="flex items-center gap-2 md:gap-4 min-w-0">
               <div className="flex items-baseline gap-1.5 md:gap-2">
                 <span className="text-base md:text-xl font-[900] tracking-tight text-[var(--text-primary)] whitespace-nowrap">CHORD.GEN</span>
@@ -1606,6 +1834,15 @@ export default function ChordGenerator() {
               >
                 <Settings className="w-4 h-4" />
               </button>
+              <button
+                onClick={() => { stopPlayback(); setUiMode(null) }}
+                className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#FCEB14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#FCEB14] hover:shadow-[0_0_12px_rgba(252,235,20,0.2)] relative"
+                title="Switch mode (Cyber / 90s)"
+                aria-label="Switch mode"
+              >
+                <Music className="w-4 h-4" />
+                <span className="absolute -top-1 -right-1 cyber-mono text-[7px] font-[900] bg-[#0D1117] text-[#FCEB14] px-0.5 py-0 leading-none border border-[#FCEB14]">M</span>
+              </button>
             </div>
           </div>
 
@@ -1622,7 +1859,7 @@ export default function ChordGenerator() {
                   onDrop={(e) => handleDrop(e, i)}
                   onDragEnd={handleDragEnd}
                   onClick={() => playChordPreview(i)}
-                  className={`relative p-4 md:p-5 transition-all duration-200 cursor-grab active:cursor-grabbing text-left border min-h-[88px] md:min-h-[120px] group select-none ${getChordColorClasses(i, activeChordIndex === i)} ${dragOverIndex === i ? "scale-105 border-dashed border-[#C0FC14] z-10" : ""}`}
+                  className={`chord-card relative p-4 md:p-5 transition-all duration-200 cursor-grab active:cursor-grabbing text-left border min-h-[88px] md:min-h-[120px] group select-none ${getChordColorClasses(i, activeChordIndex === i, uiMode === "90s")} ${dragOverIndex === i ? "scale-105 border-dashed border-[#C0FC14] z-10" : ""}`}
                 >
                   <div className="absolute top-1.5 left-1.5 text-[var(--text-faint)] opacity-40 group-hover:opacity-70">
                     <GripVertical size={14} />
@@ -1902,18 +2139,33 @@ export default function ChordGenerator() {
                         onChange={(e) => setSettings((s) => ({ ...s, synthType: e.target.value }))}
                         className="ctrl-select"
                       >
-                        <option value="pad">Pad</option>
-                        <option value="pluck">Pluck</option>
-                        <option value="keys">Keys</option>
-                        <option value="strings">Strng</option>
-                        <option value="organ">Organ</option>
-                        <option value="bell">Bell</option>
-                        <option value="bass">Bass</option>
-                        <option value="lead">Lead</option>
-                        <option value="brass">Brass</option>
-                        <option value="fm">FM</option>
-                        <option value="supersaw">Super</option>
-                        <option value="wobble">Wobb</option>
+                        {uiMode === "90s" ? (
+                          <>
+                            <option value="fm">FM</option>
+                            <option value="pulse">Pulse</option>
+                            <option value="chip">Chip</option>
+                            <option value="pcm">PCM</option>
+                            <option value="analog">Analog</option>
+                            <option value="tracker">Trackr</option>
+                            <option value="pluck90">Pluck</option>
+                            <option value="pad90">Pad</option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="pad">Pad</option>
+                            <option value="pluck">Pluck</option>
+                            <option value="keys">Keys</option>
+                            <option value="strings">Strng</option>
+                            <option value="organ">Organ</option>
+                            <option value="bell">Bell</option>
+                            <option value="bass">Bass</option>
+                            <option value="lead">Lead</option>
+                            <option value="brass">Brass</option>
+                            <option value="fm">FM</option>
+                            <option value="supersaw">Super</option>
+                            <option value="wobble">Wobb</option>
+                          </>
+                        )}
                       </select>
                     </div>
                   </div>
@@ -2071,7 +2323,7 @@ export default function ChordGenerator() {
             )}
           </div>
           {/* Footer */}
-          <div className="bg-[var(--base-panel)] cyber-panel px-3 md:px-6 py-2.5 md:py-3 flex items-center justify-center gap-3 cyber-mono text-[12px] text-[var(--text-dim)] border border-[var(--base-border)] font-[bolder]">
+          <div className="app-statusbar bg-[var(--base-panel)] cyber-panel px-3 md:px-6 py-2.5 md:py-3 flex items-center justify-center gap-3 cyber-mono text-[12px] text-[var(--text-dim)] border border-[var(--base-border)] font-[bolder]">
             <span className="hidden sm:inline text-[#C0FC14] glow-green">SPACE</span>
             <span className="text-[var(--base-border-bright)] hidden sm:inline">=</span>
             <span>PLAY / STOP</span>
@@ -2256,6 +2508,16 @@ export default function ChordGenerator() {
               <RotateCcw className="w-7 h-7 text-[var(--text-dim)] group-hover:text-[#FF2D7C] transition-colors" />
               <div className="text-sm font-[700] group-hover:text-[#FF2D7C]">Reset</div>
               <div className="text-[10px] text-[var(--text-muted)] leading-tight">Default values</div>
+            </button>
+
+            {/* Switch Mode */}
+            <button
+              onClick={() => { stopPlayback(); setConfigModalOpen(false); setUiMode(null) }}
+              className="flex flex-col items-center justify-center gap-2 p-5 bg-[var(--base-card)] border border-[var(--base-border)] text-[var(--text-primary)] hover:border-[#FCEB14] hover:shadow-[0_0_16px_rgba(252,235,20,0.12)] hover:text-[#FCEB14] transition-all rounded min-h-[120px] group"
+            >
+              <Music className="w-7 h-7 text-[var(--text-dim)] group-hover:text-[#FCEB14] transition-colors" />
+              <div className="text-sm font-[700] group-hover:text-[#FCEB14]">Switch Mode</div>
+              <div className="text-[10px] text-[var(--text-muted)] leading-tight">Cyber / 90s</div>
             </button>
           </div>
         </DialogContent>
