@@ -1710,14 +1710,14 @@ export default function ChordGenerator() {
               </button>
               <button
                 onClick={generateAll}
-                className="transport-btn flex items-center justify-center gap-2.5 py-4 md:py-5 bg-[#C0FC14] border-2 border-[#C0FC14] text-[#0D1117] font-[900] uppercase text-sm md:text-base tracking-widest transition-all min-h-[52px] hover:shadow-[0_0_24px_rgba(192,252,20,0.4)] relative"
+                className="transport-btn flex items-center justify-center gap-2.5 py-4 md:py-5 bg-[#B829FF] border-2 border-[#B829FF] text-[#0D1117] font-[900] uppercase text-sm md:text-base tracking-widest transition-all min-h-[52px] hover:shadow-[0_0_24px_rgba(184,41,255,0.4)] relative"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M23 4v6h-6M1 20v-6h6" />
                   <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
                 </svg>
                 ALL
-                <span className="absolute top-1 right-1 cyber-mono text-[9px] font-[900] bg-[#0D1117] text-[#C0FC14] px-1 py-0.5 leading-none border border-[#C0FC14]">A</span>
+                <span className="absolute top-1 right-1 cyber-mono text-[9px] font-[900] bg-[#0D1117] text-[#B829FF] px-1 py-0.5 leading-none border border-[#B829FF]">G</span>
               </button>
             </div>
           </div>
