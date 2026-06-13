@@ -21,6 +21,15 @@ import {
   playClap90s,
   invalidateNoiseBuffer as invalidateNoiseBuffer90s,
 } from "@/lib/audio/synth-90s"
+import {
+  playSynthVwNote,
+  playKickVw,
+  playSnareVw,
+  playHiHatVw,
+  playRimVw,
+  playClapVw,
+  invalidateNoiseBuffer as invalidateNoiseBufferVw,
+} from "@/lib/audio/synth-vaporwave"
 import { Pencil, X, Plus, Trash2, GripVertical, Settings, Copy, Save, Download, Music, RotateCcw, Sun, Moon, Link } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Toaster } from "@/components/ui/toaster"
@@ -543,8 +552,8 @@ export default function ChordGenerator() {
   const [mode, setMode] = useState("major")
   const [style, setStyle] = useState("modern")
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
-  // uiMode: null = chooser shown on every page load; "cyber" | "90s" = active mode
-  const [uiMode, setUiMode] = useState<"cyber" | "90s" | null>(null)
+  // uiMode: null = chooser shown on every page load; "cyber" | "90s" | "vw" = active mode
+  const [uiMode, setUiMode] = useState<"cyber" | "90s" | "vw" | null>(null)
 
   const [bpmInput, setBpmInput] = useState(settings.bpm.toString())
 
@@ -566,30 +575,31 @@ export default function ChordGenerator() {
   const [linkCopied, setLinkCopied] = useState(false)
   const { toast } = useToast()
 
-  // Reflect uiMode on <html> so the .mode-90s CSS theme can take over
+  // Reflect uiMode on <html> so the .mode-90s / .mode-vaporwave CSS themes can take over
   useEffect(() => {
     const html = document.documentElement
-    if (uiMode === "90s") html.classList.add("mode-90s")
-    else html.classList.remove("mode-90s")
+    html.classList.toggle("mode-90s", uiMode === "90s")
+    html.classList.toggle("mode-vaporwave", uiMode === "vw")
   }, [uiMode])
 
-  const chooseMode = useCallback((m: "cyber" | "90s") => {
+  const chooseMode = useCallback((m: "cyber" | "90s" | "vw") => {
     setUiMode(m)
-    // In 90s mode, default to a synth that exists in the 90s engine
-    if (m === "90s") {
-      setSettings((s) => {
-        const ninetySynths = ["fm", "pulse", "chip", "pcm", "analog", "tracker", "pluck90", "pad90"]
+    // Set a default synth appropriate for the chosen mode
+    setSettings((s) => {
+      const ninetySynths = ["fm", "pulse", "chip", "pcm", "analog", "tracker", "pluck90", "pad90"]
+      const vwSynths = ["dx7pad", "chorusLead", "dxBell", "brassStab", "dxPluck", "vhsKeys", "synthBass", "strings"]
+      if (m === "90s") {
         const synthType = ninetySynths.includes(s.synthType) ? s.synthType : "fm"
         return { ...s, synthType }
-      })
-    } else {
-      // Going back to cyber, restore a default cyber synth if current is 90s-only
-      setSettings((s) => {
-        const ninetySynths = ["fm", "pulse", "chip", "pcm", "analog", "tracker", "pluck90", "pad90"]
-        const synthType = ninetySynths.includes(s.synthType) ? "pad" : s.synthType
+      } else if (m === "vw") {
+        const synthType = vwSynths.includes(s.synthType) ? s.synthType : "dx7pad"
         return { ...s, synthType }
-      })
-    }
+      } else {
+        // Going back to cyber, restore a default cyber synth if current is 90s- or vw-only
+        const synthType = (ninetySynths.includes(s.synthType) || vwSynths.includes(s.synthType)) ? "pad" : s.synthType
+        return { ...s, synthType }
+      }
+    })
   }, [])
 
   // Load config from URL hash or local storage on mount
@@ -677,7 +687,7 @@ export default function ChordGenerator() {
   const arpDirectionRef = useRef(1)
   const skipProgressionGenerationRef = useRef(false)
   const lastGenerateAllTimeRef = useRef(0)
-  const uiModeRef = useRef<"cyber" | "90s" | null>(null)
+  const uiModeRef = useRef<"cyber" | "90s" | "vw" | null>(null)
 
   // Keep refs in sync
   useEffect(() => {
@@ -762,6 +772,12 @@ export default function ChordGenerator() {
           freq, time, duration, synthType,
           settingsRef.current.chordVolume, settingsRef.current.reverbAmount
         )
+      } else if (uiModeRef.current === "vw") {
+        playSynthVwNote(
+          audioCtxRef.current, masterGainRef.current, reverbNodeRef.current,
+          freq, time, duration, synthType,
+          settingsRef.current.chordVolume, settingsRef.current.reverbAmount
+        )
       } else {
         playSynthNote(
           audioCtxRef.current, masterGainRef.current, reverbNodeRef.current,
@@ -824,6 +840,8 @@ export default function ChordGenerator() {
     if (!audioCtxRef.current || !masterGainRef.current || !reverbNodeRef.current) return
     if (uiModeRef.current === "90s") {
       playKick90s(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 1.0, reverbNodeRef.current, settingsRef.current.reverbAmount)
+    } else if (uiModeRef.current === "vw") {
+      playKickVw(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 1.0, reverbNodeRef.current, settingsRef.current.reverbAmount)
     } else {
       enginePlayKick(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 1.0, reverbNodeRef.current, settingsRef.current.reverbAmount)
     }
@@ -833,6 +851,8 @@ export default function ChordGenerator() {
     if (!audioCtxRef.current || !masterGainRef.current || !reverbNodeRef.current) return
     if (uiModeRef.current === "90s") {
       playSnare90s(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.9, reverbNodeRef.current, settingsRef.current.reverbAmount)
+    } else if (uiModeRef.current === "vw") {
+      playSnareVw(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.9, reverbNodeRef.current, settingsRef.current.reverbAmount)
     } else {
       enginePlaySnare(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.9, reverbNodeRef.current, settingsRef.current.reverbAmount)
     }
@@ -842,6 +862,8 @@ export default function ChordGenerator() {
     if (!audioCtxRef.current || !masterGainRef.current || !reverbNodeRef.current) return
     if (uiModeRef.current === "90s") {
       playHiHat90s(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * (open ? 0.3 : 0.35), reverbNodeRef.current, settingsRef.current.reverbAmount, open)
+    } else if (uiModeRef.current === "vw") {
+      playHiHatVw(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * (open ? 0.3 : 0.35), reverbNodeRef.current, settingsRef.current.reverbAmount, open)
     } else {
       enginePlayHiHat(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * (open ? 0.3 : 0.35), reverbNodeRef.current, settingsRef.current.reverbAmount, open)
     }
@@ -850,6 +872,8 @@ export default function ChordGenerator() {
     if (!audioCtxRef.current || !masterGainRef.current || !reverbNodeRef.current) return
     if (uiModeRef.current === "90s") {
       playRim90s(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.5, reverbNodeRef.current, settingsRef.current.reverbAmount)
+    } else if (uiModeRef.current === "vw") {
+      playRimVw(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.5, reverbNodeRef.current, settingsRef.current.reverbAmount)
     } else {
       enginePlayRim(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.5, reverbNodeRef.current, settingsRef.current.reverbAmount)
     }
@@ -858,6 +882,8 @@ export default function ChordGenerator() {
     if (!audioCtxRef.current || !masterGainRef.current || !reverbNodeRef.current) return
     if (uiModeRef.current === "90s") {
       playClap90s(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.7, reverbNodeRef.current, settingsRef.current.reverbAmount)
+    } else if (uiModeRef.current === "vw") {
+      playClapVw(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.7, reverbNodeRef.current, settingsRef.current.reverbAmount)
     } else {
       enginePlayClap(audioCtxRef.current, masterGainRef.current, time, settingsRef.current.drumVolume * 0.7, reverbNodeRef.current, settingsRef.current.reverbAmount)
     }
@@ -1014,6 +1040,8 @@ export default function ChordGenerator() {
     const allStyles = Object.keys(STYLE_PROGRESSIONS)
     const allSynths = uiMode === "90s"
       ? ["fm", "pulse", "chip", "pcm", "analog", "tracker", "pluck90", "pad90"]
+      : uiMode === "vw"
+      ? ["dx7pad", "chorusLead", "dxBell", "brassStab", "dxPluck", "vhsKeys", "synthBass", "strings"]
       : ["pad", "pluck", "keys", "strings", "organ", "bell", "bass", "lead", "brass", "fm", "supersaw", "wobble"]
     const allRhythms = Object.keys(SYNTH_RHYTHMS)
     const allDrumStyles = ["basic", "basic1", "basic2", "basic3", "hiphop", "house", "trap", "dnb", "reggae", "shuffle", "bossa", "reggaeton", "click", "none"]
@@ -1407,6 +1435,8 @@ export default function ChordGenerator() {
     const playNote = (freq: number, time: number, duration: number, synthType: string) => {
       if (uiMode === "90s") {
         playSynth90sNote(ctx, masterGain, convolver, freq, time, duration, synthType, settings.chordVolume, settings.reverbAmount)
+      } else if (uiMode === "vw") {
+        playSynthVwNote(ctx, masterGain, convolver, freq, time, duration, synthType, settings.chordVolume, settings.reverbAmount)
       } else {
         playSynthNote(ctx, masterGain, convolver, freq, time, duration, synthType, settings.chordVolume, settings.reverbAmount, bpm)
       }
@@ -1416,6 +1446,8 @@ export default function ChordGenerator() {
     const playKick = (time: number) => {
       if (uiMode === "90s") {
         playKick90s(ctx, masterGain, time, settings.drumVolume * 1.0, convolver, settings.reverbAmount)
+      } else if (uiMode === "vw") {
+        playKickVw(ctx, masterGain, time, settings.drumVolume * 1.0, convolver, settings.reverbAmount)
       } else {
         enginePlayKick(ctx, masterGain, time, settings.drumVolume * 1.0, convolver, settings.reverbAmount)
       }
@@ -1423,6 +1455,8 @@ export default function ChordGenerator() {
     const playSnare = (time: number) => {
       if (uiMode === "90s") {
         playSnare90s(ctx, masterGain, time, settings.drumVolume * 0.9, convolver, settings.reverbAmount)
+      } else if (uiMode === "vw") {
+        playSnareVw(ctx, masterGain, time, settings.drumVolume * 0.9, convolver, settings.reverbAmount)
       } else {
         enginePlaySnare(ctx, masterGain, time, settings.drumVolume * 0.9, convolver, settings.reverbAmount)
       }
@@ -1430,6 +1464,8 @@ export default function ChordGenerator() {
     const playHiHat = (time: number, open = false) => {
       if (uiMode === "90s") {
         playHiHat90s(ctx, masterGain, time, settings.drumVolume * (open ? 0.3 : 0.35), convolver, settings.reverbAmount, open)
+      } else if (uiMode === "vw") {
+        playHiHatVw(ctx, masterGain, time, settings.drumVolume * (open ? 0.3 : 0.35), convolver, settings.reverbAmount, open)
       } else {
         enginePlayHiHat(ctx, masterGain, time, settings.drumVolume * (open ? 0.3 : 0.35), convolver, settings.reverbAmount, open)
       }
@@ -1437,6 +1473,8 @@ export default function ChordGenerator() {
     const playRim = (time: number) => {
       if (uiMode === "90s") {
         playRim90s(ctx, masterGain, time, settings.drumVolume * 0.5, convolver, settings.reverbAmount)
+      } else if (uiMode === "vw") {
+        playRimVw(ctx, masterGain, time, settings.drumVolume * 0.5, convolver, settings.reverbAmount)
       } else {
         enginePlayRim(ctx, masterGain, time, settings.drumVolume * 0.5, convolver, settings.reverbAmount)
       }
@@ -1444,6 +1482,8 @@ export default function ChordGenerator() {
     const playClap = (time: number) => {
       if (uiMode === "90s") {
         playClap90s(ctx, masterGain, time, settings.drumVolume * 0.7, convolver, settings.reverbAmount)
+      } else if (uiMode === "vw") {
+        playClapVw(ctx, masterGain, time, settings.drumVolume * 0.7, convolver, settings.reverbAmount)
       } else {
         enginePlayClap(ctx, masterGain, time, settings.drumVolume * 0.7, convolver, settings.reverbAmount)
       }
@@ -1695,7 +1735,7 @@ export default function ChordGenerator() {
             <p className="cyber-mono text-[12px] md:text-[14px] text-[var(--text-muted)]">CHOOSE YOUR INTERFACE</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-7">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
             {/* Cyberpunk card */}
             <button
               onClick={() => chooseMode("cyber")}
@@ -1780,6 +1820,33 @@ export default function ChordGenerator() {
                 <div className="chooser-cta" style={{ color: "#000080", fontFamily: "var(--font-90s-pixel), 'MS Sans Serif', sans-serif" }}>▶ LAUNCH</div>
               </div>
             </button>
+
+            {/* Vaporwave card */}
+            <button
+              onClick={() => chooseMode("vw")}
+              className="chooser-card group"
+              data-testid="mode-vw"
+              style={{
+                background: "linear-gradient(135deg, #1A0033 0%, #3D1466 50%, #FF6B9D 100%)",
+                color: "#FFE5F1",
+                border: "2px solid #FF6B9D",
+                boxShadow: "0 0 24px rgba(255, 107, 157, 0.4), inset 0 0 24px rgba(184, 41, 255, 0.2)",
+              }}
+            >
+              <div className="chooser-thumb" style={{ background: "linear-gradient(180deg, #1A0033 0%, #3D1466 30%, #FF6B9D 60%, #FF8B3D 80%, #FFE15A 100%)", borderBottom: "1px solid #FF6B9D", position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", left: "50%", top: "55%", transform: "translate(-50%, -50%)", width: "100px", height: "100px", borderRadius: "50%", background: "radial-gradient(circle, #FFE15A 0%, #FF8B3D 50%, #FF6B9D 100%)", boxShadow: "0 0 30px rgba(255, 107, 157, 0.6)" }} />
+                <div style={{ position: "absolute", left: "50%", top: "55%", transform: "translate(-50%, -50%)", width: "100px", height: "100px", borderRadius: "50%", backgroundImage: "repeating-linear-gradient(180deg, transparent 0px, transparent 3px, #1A0033 3px, #1A0033 4px)", backgroundSize: "100% 8px", backgroundPosition: "center 60%" }} />
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "30%", backgroundImage: "linear-gradient(90deg, transparent 49%, rgba(0, 255, 255, 0.6) 49%, rgba(0, 255, 255, 0.6) 51%, transparent 51%), linear-gradient(0deg, transparent 49%, rgba(255, 107, 157, 0.6) 49%, rgba(255, 107, 157, 0.6) 51%, transparent 51%)", backgroundSize: "12px 100%, 100% 8px", transform: "perspective(200px) rotateX(50deg)", transformOrigin: "bottom" }} />
+              </div>
+              <div className="chooser-body" style={{ background: "linear-gradient(135deg, #1A0033 0%, #2D1B4E 100%)", color: "#FFE5F1" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                  <h2 style={{ color: "#00FFFF", textShadow: "0 0 8px rgba(0, 255, 255, 0.6)", fontSize: "18px" }}>VAPORWAVE</h2>
+                  <span style={{ fontSize: "12px", color: "#FF6B9D", textShadow: "0 0 6px rgba(255, 107, 157, 0.5)" }}> vapor wave </span>
+                </div>
+                <p style={{ color: "#FFC2DD", fontSize: "12px" }}>Sunset gradients, perspective grid, and pink-tinted VHS scanlines. DX7 pads, gated reverb drums, chorused leads, and 80s string machine sounds.</p>
+                <div className="chooser-cta" style={{ color: "#00FFFF", textShadow: "0 0 8px rgba(0, 255, 255, 0.6)" }}>▶ ENTER</div>
+              </div>
+            </button>
           </div>
 
           <p className="text-center cyber-mono text-[10px] md:text-[11px] text-[var(--text-faint)] mt-6 md:mt-8">YOU CAN SWITCH MODES ANY TIME FROM THE CONFIG MENU</p>
@@ -1833,7 +1900,7 @@ export default function ChordGenerator() {
               <button
                 onClick={() => { stopPlayback(); setUiMode(null) }}
                 className="p-1.5 md:p-2 text-[var(--text-primary)] hover:text-[#FCEB14] hover:bg-[var(--base-card)] transition-all border border-transparent hover:border-[#FCEB14] hover:shadow-[0_0_12px_rgba(252,235,20,0.2)] relative"
-                title="Switch mode (Cyber / 90s)"
+                title="Switch mode (Cyber / 90s / Vaporwave)"
                 aria-label="Switch mode"
               >
                 <Music className="w-4 h-4" />
@@ -2145,6 +2212,17 @@ export default function ChordGenerator() {
                             <option value="tracker">Trackr</option>
                             <option value="pluck90">Pluck</option>
                             <option value="pad90">Pad</option>
+                          </>
+                        ) : uiMode === "vw" ? (
+                          <>
+                            <option value="dx7pad">DX7 Pad</option>
+                            <option value="chorusLead">Chorus</option>
+                            <option value="dxBell">DX Bell</option>
+                            <option value="brassStab">Brass</option>
+                            <option value="dxPluck">DX Pluck</option>
+                            <option value="vhsKeys">VHS Kys</option>
+                            <option value="synthBass">Bass</option>
+                            <option value="strings">Strng</option>
                           </>
                         ) : (
                           <>

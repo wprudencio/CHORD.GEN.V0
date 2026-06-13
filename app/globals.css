@@ -1333,3 +1333,563 @@ button { border-radius: 0; transition: all 150ms ease; }
 }
 .mode-90s [role="status"] *,
 .mode-90s [data-sonner-toast] * { color: #000 !important; text-shadow: none !important; }
+
+/* ============================================================
+   VAPORWAVE MODE — 80s sunset aesthetic
+   Triggered by adding the `.mode-vaporwave` class to <html>.
+   Purple/pink/orange sunset gradient, perspective grid horizon,
+   big striped sun, VHS scanlines, Japanese text accents.
+   ============================================================ */
+
+.mode-vaporwave {
+  --base-bg: #1A0033;
+  --base-panel: #2D1B4E;
+  --base-card: #3D2660;
+  --base-input: #1A0033;
+  --base-border: #FF6B9D;
+  --base-border-bright: #00FFFF;
+
+  --text-primary: #FFE5F1;
+  --text-secondary: #FFC2DD;
+  --text-muted: #B8A4C9;
+  --text-dim: #8B7BA0;
+  --text-faint: #5A4A6E;
+
+  --neon-green: #00FFFF;
+  --green-dim: rgba(0, 255, 255, 0.15);
+  --green-glow: rgba(0, 255, 255, 0.6);
+
+  --neon-pink: #FF6B9D;
+  --pink-dim: rgba(255, 107, 157, 0.15);
+  --pink-glow: rgba(255, 107, 157, 0.6);
+
+  --neon-blue: #8B5FBF;
+  --blue-dim: rgba(139, 95, 191, 0.15);
+  --blue-glow: rgba(139, 95, 191, 0.6);
+
+  --neon-yellow: #FFE15A;
+  --yellow-dim: rgba(255, 225, 90, 0.15);
+  --yellow-glow: rgba(255, 225, 90, 0.6);
+
+  --neon-orange: #FF8B3D;
+  --orange-dim: rgba(255, 139, 61, 0.15);
+  --orange-glow: rgba(255, 139, 61, 0.6);
+
+  --neon-purple: #B829FF;
+  --purple-dim: rgba(184, 41, 255, 0.15);
+  --purple-glow: rgba(184, 41, 255, 0.6);
+
+  --neon-cyan: #00FFFF;
+  --cyan-dim: rgba(0, 255, 255, 0.15);
+  --cyan-glow: rgba(0, 255, 255, 0.6);
+
+  --background: var(--base-bg);
+  --foreground: var(--text-primary);
+  --card: var(--base-card);
+  --card-foreground: var(--text-primary);
+  --popover: var(--base-card);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--neon-pink);
+  --primary-foreground: #1A0033;
+  --secondary: var(--base-panel);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--base-panel);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--neon-cyan);
+  --accent-foreground: #1A0033;
+  --destructive: var(--neon-orange);
+  --destructive-foreground: #1A0033;
+  --border: var(--base-border);
+  --input: var(--base-input);
+  --ring: var(--neon-pink);
+  --radius: 0px;
+  --sidebar: var(--base-panel);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--neon-pink);
+  --sidebar-primary-foreground: #1A0033;
+  --sidebar-accent: var(--neon-cyan);
+  --sidebar-accent-foreground: #1A0033;
+  --sidebar-border: var(--base-border);
+  --sidebar-ring: var(--neon-pink);
+}
+
+/* Vaporwave body — sunset gradient */
+.mode-vaporwave body,
+.mode-vaporwave .cyber-grid-bg {
+  background: linear-gradient(180deg,
+    #1A0033 0%,
+    #3D1466 25%,
+    #8B2266 50%,
+    #FF6B9D 70%,
+    #FF8B3D 85%,
+    #FFE15A 100%
+  ) !important;
+  background-attachment: fixed !important;
+  background-image:
+    linear-gradient(180deg,
+      #1A0033 0%,
+      #3D1466 25%,
+      #8B2266 50%,
+      #FF6B9D 70%,
+      #FF8B3D 85%,
+      #FFE15A 100%
+    ) !important;
+}
+
+/* Perspective grid horizon — the iconic vaporwave element */
+.mode-vaporwave .cyber-grid-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    /* Horizontal lines (perspective) */
+    linear-gradient(180deg, transparent 49.5%, rgba(255, 107, 157, 0.6) 49.5%, rgba(255, 107, 157, 0.6) 50.5%, transparent 50.5%),
+    /* Vertical lines (perspective, expanding outward) */
+    linear-gradient(90deg, transparent 49.7%, rgba(0, 255, 255, 0.5) 49.7%, rgba(0, 255, 255, 0.5) 50.3%, transparent 50.3%);
+  background-size: 100% 100%, 8% 100%;
+  background-position: center 60%, center 60%;
+  transform: perspective(800px) rotateX(60deg);
+  transform-origin: center 60%;
+  mask-image: linear-gradient(180deg, transparent 0%, transparent 5%, black 30%, black 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, transparent 5%, black 30%, black 100%);
+  opacity: 0.7;
+}
+
+/* Big sun with horizontal bands */
+.mode-vaporwave .cyber-grid-bg::after {
+  content: '';
+  position: fixed;
+  left: 50%;
+  top: 38%;
+  transform: translate(-50%, -50%);
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    #FFE15A 0%,
+    #FF8B3D 40%,
+    #FF6B9D 75%,
+    transparent 90%
+  );
+  pointer-events: none;
+  z-index: 0;
+  /* Horizontal band stripes (the classic vaporwave sun) */
+  background-image:
+    linear-gradient(180deg,
+      transparent 0%, transparent 28%,
+      #1A0033 28%, #1A0033 31%,
+      transparent 31%, transparent 36%,
+      #1A0033 36%, #1A0033 39%,
+      transparent 39%, transparent 44%,
+      #1A0033 44%, #1A0033 47%,
+      transparent 47%, transparent 52%,
+      #1A0033 52%, #1A0033 55%,
+      transparent 55%, transparent 100%
+    ),
+    radial-gradient(circle,
+      #FFE15A 0%,
+      #FF8B3D 50%,
+      #FF6B9D 90%,
+      transparent 100%
+    );
+  box-shadow: 0 0 100px rgba(255, 107, 157, 0.5);
+}
+
+/* Make sure the main app container sits above the grid + sun */
+.mode-vaporwave .max-w-7xl { position: relative; z-index: 1; }
+
+/* === Panels — translucent, glowing borders === */
+.mode-vaporwave .cyber-panel {
+  background: rgba(26, 0, 51, 0.55) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid var(--neon-pink) !important;
+  box-shadow:
+    0 0 24px rgba(255, 107, 157, 0.15),
+    inset 0 0 24px rgba(184, 41, 255, 0.08) !important;
+  background-image: none !important;
+}
+
+/* === Typography === */
+.mode-vaporwave .cyber-display {
+  font-family: var(--font-display), 'Chakra Petch', sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  text-shadow: 0 0 12px rgba(255, 107, 157, 0.6), 0 0 24px rgba(184, 41, 255, 0.4);
+}
+.mode-vaporwave .cyber-mono {
+  font-family: var(--font-mono), 'Share Tech Mono', monospace !important;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 6px rgba(0, 255, 255, 0.5);
+}
+
+/* Keep neon glows in vaporwave */
+.mode-vaporwave .glow-green { text-shadow: 0 0 10px var(--green-glow), 0 0 20px var(--green-dim); }
+.mode-vaporwave .glow-pink { text-shadow: 0 0 10px var(--pink-glow), 0 0 20px var(--pink-dim); }
+.mode-vaporwave .glow-blue { text-shadow: 0 0 10px var(--blue-glow), 0 0 20px var(--blue-dim); }
+.mode-vaporwave .glow-yellow { text-shadow: 0 0 10px var(--yellow-glow), 0 0 20px var(--yellow-dim); }
+.mode-vaporwave .glow-orange { text-shadow: 0 0 10px var(--orange-glow), 0 0 20px var(--orange-dim); }
+.mode-vaporwave .glow-purple { text-shadow: 0 0 10px var(--purple-glow), 0 0 20px var(--purple-dim); }
+.mode-vaporwave .glow-cyan { text-shadow: 0 0 10px var(--cyan-glow), 0 0 20px var(--cyan-dim); }
+
+/* === VHS scanlines — pink-tinted, soft === */
+.mode-vaporwave .scanlines::before {
+  background: repeating-linear-gradient(0deg,
+    transparent 0, transparent 2px,
+    rgba(255, 107, 157, 0.04) 2px, rgba(255, 107, 157, 0.04) 3px
+  ) !important;
+}
+.mode-vaporwave .scanlines-strong::before {
+  background: repeating-linear-gradient(0deg,
+    transparent 0, transparent 2px,
+    rgba(255, 107, 157, 0.06) 2px, rgba(255, 107, 157, 0.06) 3px
+  ) !important;
+}
+/* Keep noise overlay (vaporwave aesthetic) */
+.mode-vaporwave .noise-overlay::after { opacity: 0.05; mix-blend-mode: screen; }
+
+/* === Form controls — sunken, pink-bordered === */
+.mode-vaporwave .ctrl-wrapper {
+  background: rgba(26, 0, 51, 0.7) !important;
+  border: 1px solid var(--neon-pink) !important;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5);
+  color: #FFE5F1 !important;
+}
+.mode-vaporwave .ctrl-wrapper:focus-within {
+  border-color: var(--neon-cyan) !important;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5), 0 0 12px var(--cyan-glow) !important;
+}
+.mode-vaporwave .ctrl-select,
+.mode-vaporwave .ctrl-input {
+  color: #FFE5F1 !important;
+  background: transparent !important;
+}
+.mode-vaporwave .ctrl-select option {
+  background: #2D1B4E;
+  color: #FFE5F1;
+}
+.mode-vaporwave .ctrl-wrapper:has(.ctrl-select)::after {
+  border-top-color: var(--neon-pink) !important;
+}
+
+/* Range sliders */
+.mode-vaporwave .ctrl-range-wrapper {
+  background: rgba(26, 0, 51, 0.7) !important;
+  border: 1px solid var(--neon-pink) !important;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5);
+}
+.mode-vaporwave input[type="range"] {
+  background: rgba(255, 107, 157, 0.2) !important;
+}
+.mode-vaporwave input[type="range"]::-webkit-slider-thumb {
+  background: var(--neon-cyan) !important;
+  box-shadow: 0 0 10px var(--cyan-glow) !important;
+}
+.mode-vaporwave input[type="range"]::-moz-range-thumb {
+  background: var(--neon-cyan) !important;
+  box-shadow: 0 0 10px var(--cyan-glow) !important;
+}
+
+/* === Toggle buttons — chunky neon === */
+.mode-vaporwave .ctrl-toggle {
+  background: rgba(26, 0, 51, 0.7) !important;
+  color: #FFE5F1 !important;
+  border: 1px solid var(--neon-pink) !important;
+  box-shadow: 0 0 8px rgba(255, 107, 157, 0.2);
+  text-shadow: 0 0 6px rgba(255, 107, 157, 0.4);
+}
+.mode-vaporwave .ctrl-toggle.active {
+  background: var(--neon-cyan) !important;
+  color: #1A0033 !important;
+  border-color: var(--neon-cyan) !important;
+  box-shadow: 0 0 16px var(--cyan-glow), 0 0 32px var(--cyan-dim) !important;
+  text-shadow: none !important;
+}
+.mode-vaporwave .ctrl-toggle.inactive {
+  background: rgba(26, 0, 51, 0.7) !important;
+  color: #B8A4C9 !important;
+  border-color: rgba(255, 107, 157, 0.4) !important;
+}
+
+/* === Transport buttons — neon glow + override inline colors === */
+.mode-vaporwave .transport-btn {
+  text-shadow: 0 0 8px currentColor;
+  border-radius: 0 !important;
+}
+/* Override the inline cyber colors with vaporwave palette */
+.mode-vaporwave button[class*="bg-[#C0FC14]"],
+.mode-vaporwave button[class*="bg-[#FF2D7C]"],
+.mode-vaporwave button[class*="bg-[#2B7FFF]"],
+.mode-vaporwave button[class*="bg-[#FCEB14]"],
+.mode-vaporwave button[class*="bg-[#FF6B2B]"],
+.mode-vaporwave button[class*="bg-[#B829FF]"] {
+  background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple)) !important;
+  border-color: var(--neon-cyan) !important;
+  color: #1A0033 !important;
+  box-shadow: 0 0 24px var(--pink-glow), 0 0 48px var(--cyan-glow) !important;
+}
+.mode-vaporwave button[class*="bg-[#C0FC14]"]:hover,
+.mode-vaporwave button[class*="bg-[#FF2D7C]"]:hover,
+.mode-vaporwave button[class*="bg-[#2B7FFF]"]:hover,
+.mode-vaporwave button[class*="bg-[#FCEB14]"]:hover,
+.mode-vaporwave button[class*="bg-[#FF6B2B]"]:hover,
+.mode-vaporwave button[class*="bg-[#B829FF]"]:hover {
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink)) !important;
+  box-shadow: 0 0 32px var(--cyan-glow), 0 0 64px var(--pink-glow) !important;
+}
+
+/* === Chord cards — sunset gradient + neon border === */
+.mode-vaporwave .chord-card {
+  background: linear-gradient(135deg, rgba(45, 27, 78, 0.85), rgba(61, 38, 96, 0.85)) !important;
+  border: 1px solid var(--neon-pink) !important;
+  box-shadow:
+    inset 0 0 12px rgba(184, 41, 255, 0.2),
+    0 0 8px rgba(255, 107, 157, 0.15) !important;
+  text-shadow: 0 0 8px rgba(255, 229, 241, 0.5) !important;
+  animation: none !important;
+}
+.mode-vaporwave .chord-card.active {
+  background: linear-gradient(135deg, var(--neon-pink), var(--neon-orange)) !important;
+  color: #1A0033 !important;
+  border-color: var(--neon-cyan) !important;
+  box-shadow:
+    0 0 24px var(--pink-glow),
+    0 0 48px var(--cyan-glow),
+    inset 0 0 16px rgba(255, 255, 255, 0.2) !important;
+  text-shadow: 0 0 6px rgba(26, 0, 51, 0.6) !important;
+  animation: vw-pulse 1.5s ease-in-out infinite !important;
+}
+@keyframes vw-pulse {
+  0%, 100% { box-shadow: 0 0 24px var(--pink-glow), 0 0 48px var(--cyan-glow), inset 0 0 16px rgba(255, 255, 255, 0.2); }
+  50% { box-shadow: 0 0 32px var(--pink-glow), 0 0 64px var(--cyan-glow), inset 0 0 20px rgba(255, 255, 255, 0.3); }
+}
+
+/* === Top bar / status bar / footer — translucent with neon === */
+.mode-vaporwave .app-titlebar {
+  background: rgba(26, 0, 51, 0.7) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid var(--neon-pink) !important;
+  box-shadow: 0 0 16px rgba(255, 107, 157, 0.2);
+  color: #FFE5F1 !important;
+}
+.mode-vaporwave .app-statusbar {
+  background: rgba(26, 0, 51, 0.7) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid var(--neon-pink) !important;
+  box-shadow: 0 0 16px rgba(255, 107, 157, 0.2);
+  color: #FFC2DD !important;
+}
+.mode-vaporwave .app-titlebar .text-\[var\(--base-border-bright\)\] { color: var(--neon-pink) !important; }
+.mode-vaporwave .bg-\[var\(--base-panel\)\].cyber-panel.px-3 {
+  background: rgba(26, 0, 51, 0.7) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid var(--neon-pink) !important;
+  box-shadow: 0 0 16px rgba(255, 107, 157, 0.2);
+  background-image: none !important;
+}
+.mode-vaporwave .bg-\[var\(--base-panel\)\].cyber-panel.px-3 .text-\[var\(--base-border-bright\)\] { color: var(--neon-pink) !important; }
+.mode-vaporwave .bg-\[var\(--base-panel\)\].cyber-panel.px-3 .text-\[var\(--text-primary\)\] { color: #FFE5F1 !important; }
+
+/* === Panel title bars (CHORD CONFIG / SYNTH CONFIG / DRUM CONFIG) — pink gradient === */
+.mode-vaporwave [class*="border-b"][class*="border-[var(--base-border)]"] {
+  background: linear-gradient(90deg, rgba(255, 107, 157, 0.3), rgba(184, 41, 255, 0.3)) !important;
+  border-bottom: 1px solid var(--neon-pink) !important;
+  color: #FFFFFF !important;
+  text-shadow: 0 0 8px rgba(255, 107, 157, 0.6);
+}
+.mode-vaporwave [class*="border-b"][class*="border-[var(--base-border)]"] span {
+  color: #FFFFFF !important;
+}
+.mode-vaporwave [class*="border-b"][class*="border-[var(--base-border)]"] .slash-divider {
+  color: var(--neon-cyan) !important;
+  text-shadow: 0 0 6px var(--cyan-glow);
+}
+
+/* === Status indicator dot === */
+.mode-vaporwave .bg-\[var\(--base-panel\)\].cyber-panel.px-3 .w-2.h-2 {
+  width: 8px !important;
+  height: 8px !important;
+  box-shadow: 0 0 8px currentColor !important;
+}
+.mode-vaporwave .bg-\[var\(--base-panel\)\].cyber-panel.px-3 .animate-pulse {
+  background: var(--neon-cyan) !important;
+  box-shadow: 0 0 12px var(--cyan-glow) !important;
+}
+.mode-vaporwave .bg-\[var\(--base-panel\)\].cyber-panel.px-3 .bg-\[var\(--text-faint\)\] {
+  background: var(--neon-purple) !important;
+  box-shadow: 0 0 8px var(--purple-glow);
+}
+
+/* === Top bar icon buttons === */
+.mode-vaporwave .bg-\[var\(--base-panel\)\].cyber-panel.px-3 button {
+  background: transparent !important;
+  color: #FFC2DD !important;
+  border: 1px solid transparent !important;
+}
+.mode-vaporwave .bg-\[var\(--base-panel\)\].cyber-panel.px-3 button:hover {
+  background: rgba(255, 107, 157, 0.15) !important;
+  border-color: var(--neon-pink) !important;
+  color: var(--neon-pink) !important;
+  box-shadow: 0 0 12px var(--pink-glow) !important;
+  text-shadow: 0 0 6px currentColor !important;
+}
+.mode-vaporwave .bg-\[var\(--base-panel\)\].cyber-panel.px-3 button > span {
+  background: var(--neon-cyan) !important;
+  color: #1A0033 !important;
+  border: 1px solid var(--neon-cyan) !important;
+  text-shadow: none !important;
+}
+
+/* === Saved chips === */
+.mode-vaporwave .saved-chip {
+  background: rgba(26, 0, 51, 0.7) !important;
+  color: #FFE5F1 !important;
+  border: 1px solid var(--neon-pink) !important;
+  box-shadow: 0 0 8px rgba(255, 107, 157, 0.15);
+}
+.mode-vaporwave .saved-chip:hover {
+  background: rgba(255, 107, 157, 0.2) !important;
+  border-color: var(--neon-cyan) !important;
+  color: var(--neon-cyan) !important;
+  box-shadow: 0 0 16px var(--cyan-glow) !important;
+  text-shadow: 0 0 6px currentColor;
+}
+
+/* === ADD CHORD card === */
+.mode-vaporwave .border-dashed {
+  border: 1px dashed var(--neon-pink) !important;
+  background: rgba(26, 0, 51, 0.3) !important;
+  color: var(--neon-pink) !important;
+}
+
+/* === Brand stamp === */
+.mode-vaporwave .brand-stamp {
+  background: var(--neon-cyan) !important;
+  color: #1A0033 !important;
+  font-family: var(--font-90s-pixel), 'MS Sans Serif', sans-serif !important;
+  font-size: 10px !important;
+  box-shadow: 0 0 12px var(--cyan-glow) !important;
+  text-shadow: none !important;
+}
+
+/* === Slash dividers — cyan neon === */
+.mode-vaporwave .slash-divider {
+  color: var(--neon-cyan) !important;
+  text-shadow: 0 0 6px var(--cyan-glow) !important;
+}
+
+/* === Modal dialogs === */
+.mode-vaporwave [role="dialog"] {
+  background: rgba(26, 0, 51, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid var(--neon-pink) !important;
+  box-shadow: 0 0 32px rgba(255, 107, 157, 0.3), 0 0 64px rgba(184, 41, 255, 0.2) !important;
+  color: #FFE5F1 !important;
+}
+.mode-vaporwave [role="dialog"] h2,
+.mode-vaporwave [role="dialog"] [class*="DialogTitle"] {
+  background: linear-gradient(90deg, rgba(255, 107, 157, 0.4), rgba(184, 41, 255, 0.4)) !important;
+  color: #FFFFFF !important;
+  text-shadow: 0 0 8px rgba(255, 107, 157, 0.6);
+  font-family: var(--font-display), 'Chakra Petch', sans-serif !important;
+  letter-spacing: 0.08em;
+}
+.mode-vaporwave [role="dialog"] label {
+  color: var(--neon-cyan) !important;
+  font-family: var(--font-mono), 'Share Tech Mono', monospace !important;
+  text-shadow: 0 0 6px var(--cyan-glow);
+}
+.mode-vaporwave [role="dialog"] button {
+  background: transparent !important;
+  color: #FFE5F1 !important;
+  border: 1px solid var(--neon-pink) !important;
+  box-shadow: 0 0 8px rgba(255, 107, 157, 0.2);
+}
+.mode-vaporwave [role="dialog"] button:hover {
+  background: rgba(255, 107, 157, 0.2) !important;
+  border-color: var(--neon-cyan) !important;
+  color: var(--neon-cyan) !important;
+  box-shadow: 0 0 16px var(--cyan-glow) !important;
+}
+.mode-vaporwave [role="dialog"] [class*="grid-cols-2"] button *,
+.mode-vaporwave [role="dialog"] [class*="grid-cols-3"] button * { color: inherit !important; }
+
+/* === Toaster === */
+.mode-vaporwave [role="status"],
+.mode-vaporwave [data-sonner-toast] {
+  background: rgba(26, 0, 51, 0.95) !important;
+  color: #FFE5F1 !important;
+  border: 1px solid var(--neon-pink) !important;
+  box-shadow: 0 0 24px rgba(255, 107, 157, 0.4);
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+.mode-vaporwave [role="status"] *,
+.mode-vaporwave [data-sonner-toast] * { color: #FFE5F1 !important; }
+
+/* === Scrollbars === */
+.mode-vaporwave ::-webkit-scrollbar { width: 8px; height: 8px; }
+.mode-vaporwave ::-webkit-scrollbar-track { background: rgba(26, 0, 51, 0.5); }
+.mode-vaporwave ::-webkit-scrollbar-thumb {
+  background: var(--neon-pink) !important;
+  box-shadow: 0 0 8px var(--pink-glow);
+  border-radius: 0 !important;
+}
+.mode-vaporwave ::-webkit-scrollbar-thumb:hover { background: var(--neon-cyan) !important; }
+
+/* === Focus rings — cyan dotted === */
+.mode-vaporwave *:focus-visible {
+  outline: 1px dotted var(--neon-cyan) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 8px var(--cyan-glow) !important;
+}
+
+/* === Corner brackets — vaporwave style (cyan / pink) === */
+.mode-vaporwave .cyber-corner::before,
+.mode-vaporwave .cyber-corner::after {
+  display: block !important;
+  border-color: var(--neon-cyan) !important;
+}
+.mode-vaporwave .cyber-corner::after {
+  border-color: var(--neon-pink) !important;
+}
+
+/* === Japanese text accent for chooser card === */
+.vaporwave-jp {
+  font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 8px var(--cyan-glow);
+  letter-spacing: 0.1em;
+}
+
+/* === Vaporwave pixel-art preview — sun + grid + palm === */
+.pixel-preview-vaporwave {
+  background: linear-gradient(180deg, #1A0033 0%, #3D1466 30%, #FF6B9D 60%, #FF8B3D 80%, #FFE15A 100%);
+  width: 160px;
+  height: 110px;
+  border: 1px solid var(--neon-pink);
+  box-shadow: 0 0 12px rgba(255, 107, 157, 0.4);
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  grid-template-rows: repeat(11, 1fr);
+  image-rendering: pixelated;
+  position: relative;
+  overflow: hidden;
+}
+.pixel-preview-vaporwave > div { width: 100%; height: 100%; }
+.pixel-preview-vaporwave .vw-sun    { background: #FFE15A; }
+.pixel-preview-vaporwave .vw-sun-o  { background: #FF8B3D; }
+.pixel-preview-vaporwave .vw-sun-p  { background: #FF6B9D; }
+.pixel-preview-vaporwave .vw-sky    { background: transparent; }
+.pixel-preview-vaporwave .vw-grid   { background: rgba(255, 107, 157, 0.8); }
+.pixel-preview-vaporwave .vw-grid-c { background: rgba(0, 255, 255, 0.8); }
+.pixel-preview-vaporwave .vw-ground { background: #1A0033; }
