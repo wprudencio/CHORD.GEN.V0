@@ -1674,10 +1674,6 @@ export default function ChordGenerator() {
       if (e.code === "KeyA") {
         generateAllRef.current()
       }
-      if (e.code === "KeyM") {
-        stopPlaybackRef.current()
-        setUiMode(null)
-      }
     }
 
     document.addEventListener("keydown", handleKeyDown)
