@@ -412,7 +412,7 @@ const DEFAULT_SETTINGS: Settings = {
   chordVolume: 0.7,
   drumVolume: 0.6,
   reverbAmount: 0.4,
-  synthType: "pad",
+  synthType: "cloud",
   synthRhythm: "sustained",
 }
 
@@ -922,7 +922,7 @@ export default function ChordGenerator() {
     const allNotes = NOTES
     const allModes = Object.keys(SCALES)
     const allStyles = Object.keys(STYLE_PROGRESSIONS)
-    const allSynths = ["pad", "pluck", "keys", "strings", "organ", "bell", "bass", "lead", "brass", "fm", "supersaw", "wobble"]
+    const allSynths = ["cloud", "marimba", "rhodes", "acid", "vox", "glass", "analog", "future", "arp", "swell"]
     const allRhythms = Object.keys(SYNTH_RHYTHMS)
     const allDrumStyles = ["basic", "basic1", "basic2", "basic3", "hiphop", "house", "trap", "dnb", "reggae", "shuffle", "bossa", "reggaeton", "click", "none"]
     const newKey = allNotes[Math.floor(Math.random() * allNotes.length)]
@@ -1947,18 +1947,16 @@ export default function ChordGenerator() {
                         onChange={(e) => setSettings((s) => ({ ...s, synthType: e.target.value }))}
                         className="ctrl-select"
                       >
-                        <option value="pad">Pad</option>
-                        <option value="pluck">Pluck</option>
-                        <option value="keys">Keys</option>
-                        <option value="strings">Strng</option>
-                        <option value="organ">Organ</option>
-                        <option value="bell">Bell</option>
-                        <option value="bass">Bass</option>
-                        <option value="lead">Lead</option>
-                        <option value="brass">Brass</option>
-                        <option value="fm">FM</option>
-                        <option value="supersaw">Super</option>
-                        <option value="wobble">Wobb</option>
+                        <option value="cloud">Cloud</option>
+                        <option value="marimba">Marimba</option>
+                        <option value="rhodes">Rhodes</option>
+                        <option value="acid">Acid</option>
+                        <option value="vox">Vox</option>
+                        <option value="glass">Glass</option>
+                        <option value="analog">Analog</option>
+                        <option value="future">Future</option>
+                        <option value="arp">Arp</option>
+                        <option value="swell">Swell</option>
                       </select>
                     </div>
                   </div>

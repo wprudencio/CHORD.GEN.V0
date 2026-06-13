@@ -258,7 +258,7 @@ export function playHiHat(ctx: AudioContext | OfflineAudioContext, dest: AudioNo
     bp.Q.value = open ? 3.0 : 5.0
     src.connect(bp)
     bp.connect(metalGain)
-    
+
     const srcStop = t + decayTime + 0.05
     src.start(t)
     src.stop(srcStop)
@@ -435,84 +435,67 @@ export function playClap(ctx: AudioContext | OfflineAudioContext, dest: AudioNod
 
 
 // ============================================================
-// SYNTH NOTE GENERATION — rich, expressive voices
+// SYNTH NOTE GENERATION — 10 new high-quality voices
 // ============================================================
 
-// Helper: create a gain node with anti-click fade
-function makeFadeGain(ctx: BaseAudioContext, vol: number, time: number, attack: number, sustain: number, release: number): GainNode {
-  const g = ctx.createGain()
-  g.gain.setValueAtTime(0.0001, time)
-  g.gain.linearRampToValueAtTime(vol, time + attack)
-  if (sustain > 0) {
-    g.gain.setValueAtTime(vol, time + attack + sustain)
-  }
-  g.gain.linearRampToValueAtTime(0.0001, time + attack + sustain + release)
-  return g
-}
-
-// Helper: apply reverb dry/wet
-function applyReverb(ctx: BaseAudioContext, node: AudioNode, dest: AudioNode, reverbSend: AudioNode, vol: number, revAmount: number): GainNode {
-  const dryG = ctx.createGain()
-  const wetG = ctx.createGain()
-  dryG.gain.value = (1 - revAmount)
-  wetG.gain.value = revAmount
-  node.connect(dryG)
-  node.connect(wetG)
-  dryG.connect(dest)
-  wetG.connect(reverbSend)
-  // Return a passthrough for chaining (not strictly needed but keeps patterns consistent)
+// Helper: stereo-width panning (simulated via allpass phase shift)
+function makeStereoWidth(ctx: BaseAudioContext, node: AudioNode, width: number): AudioNode {
+  if (width <= 0) return node
+  const delay = ctx.createDelay()
+  delay.delayTime.value = 0.0005 + width * 0.003
+  node.connect(delay)
+  const mix = ctx.createGain()
+  mix.gain.value = width * 0.35
+  delay.connect(mix)
   const out = ctx.createGain()
-  out.gain.value = 1
+  node.connect(out)
+  mix.connect(out)
   return out
 }
 
-// --- PAD: lush evolving texture with detune, chorus, and slow filter ---
-export function playPadSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  // Voice 1: 5 detuned saws + 1 triangle for richness
-  const detuneCents = [-8, -3, -1, +1, +3, +8]  // wider spread for more chorus
-  const types: OscillatorType[] = ["sawtooth", "sawtooth", "sawtooth", "sawtooth", "triangle", "sawtooth"]
+// --- 1. CLOUD: ethereal ambient pad with 8 detuned sines, slow LFO filter ---
+export function playCloudSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
+  const detuneCents = [-15, -10, -5, -2, 0, +2, +5, +10, +15]
   const mixBus = ctx.createGain()
   const filter = ctx.createBiquadFilter()
   filter.type = "lowpass"
-  // Slow filter sweep for movement
-  filter.frequency.setValueAtTime(3000, time)
-  filter.frequency.linearRampToValueAtTime(600, time + duration * 0.6)
-  filter.Q.value = 1.2
+  filter.frequency.setValueAtTime(2500, time)
+  filter.frequency.linearRampToValueAtTime(400, time + duration * 0.7)
+  filter.Q.value = 1.5
 
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < detuneCents.length; i++) {
     const osc = ctx.createOscillator()
-    osc.type = types[i]
+    osc.type = "sine"
     osc.frequency.value = freq
     osc.detune.value = detuneCents[i]
     const oscGain = ctx.createGain()
-    oscGain.gain.value = 0.15
+    oscGain.gain.value = 0.09
     osc.connect(oscGain)
     oscGain.connect(filter)
     osc.start(time)
     osc.stop(time + duration + 0.1)
   }
 
-  // LFO modulating filter for subtle movement
+  // Slow LFO filter sweep
   const lfo = ctx.createOscillator()
   const lfoGain = ctx.createGain()
   lfo.type = "sine"
-  lfo.frequency.value = 0.3
-  lfoGain.gain.value = 300
+  lfo.frequency.value = 0.15
+  lfoGain.gain.value = 400
   lfo.connect(lfoGain)
   lfoGain.connect(filter.frequency)
   lfo.start(time)
   lfo.stop(time + duration + 0.1)
 
-  // Envelope: slow attack, sustained, slow release
+  // Envelope: very slow attack, sustained, long release
   const env = ctx.createGain()
   env.gain.setValueAtTime(0.0001, time)
-  env.gain.linearRampToValueAtTime(vol * 0.18, time + 0.25)
-  env.gain.setValueAtTime(vol * 0.16, time + duration - 0.3)
+  env.gain.linearRampToValueAtTime(vol * 0.14, time + 0.5)
+  env.gain.setValueAtTime(vol * 0.12, time + duration - 0.5)
   env.gain.linearRampToValueAtTime(0.0001, time + duration)
 
   filter.connect(env)
 
-  // Dry/wet reverb
   const dryG = ctx.createGain()
   const wetG = ctx.createGain()
   dryG.gain.value = 1 - revAmt
@@ -523,51 +506,566 @@ export function playPadSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend:
   wetG.connect(reverbSend)
 }
 
-// --- PLUCK: karplus-strong-like with noise burst + filter pluck ---
-export function playPluckSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  // Noise burst for attack
-  const noiseDur = 0.04
+// --- 2. MARIMBA: bright mallet percussion with fast decay and wooden body ---
+export function playMarimbaSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
+  // Main voice: sine with sharp attack
+  const osc = ctx.createOscillator()
+  osc.type = "sine"
+  osc.frequency.value = freq
+  const oscGain = ctx.createGain()
+  oscGain.gain.setValueAtTime(vol * 0.55, time)
+  oscGain.gain.exponentialRampToValueAtTime(0.001, time + Math.min(duration * 0.6, 1.2))
+  osc.connect(oscGain)
+
+  // Wooden body resonance (noise burst)
+  const bodyLen = Math.ceil(ctx.sampleRate * 0.08)
+  const bodyBuf = ctx.createBuffer(1, bodyLen, ctx.sampleRate)
+  const bodyData = bodyBuf.getChannelData(0)
+  for (let i = 0; i < bodyLen; i++) {
+    bodyData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bodyLen, 3.5)
+  }
+  const bodySrc = ctx.createBufferSource()
+  bodySrc.buffer = bodyBuf
+  const bodyLP = ctx.createBiquadFilter()
+  bodyLP.type = "lowpass"
+  bodyLP.frequency.value = 1200
+  bodyLP.Q.value = 1.5
+  const bodyGain = ctx.createGain()
+  bodyGain.gain.setValueAtTime(vol * 0.25, time)
+  bodyGain.gain.exponentialRampToValueAtTime(0.001, time + 0.08)
+  bodySrc.connect(bodyLP)
+  bodyLP.connect(bodyGain)
+
+  // Bright transient click
+  const clickBuf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.005), ctx.sampleRate)
+  const clickData = clickBuf.getChannelData(0)
+  for (let i = 0; i < clickData.length; i++) {
+    clickData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / clickData.length, 10)
+  }
+  const clickSrc = ctx.createBufferSource()
+  clickSrc.buffer = clickBuf
+  const clickBP = ctx.createBiquadFilter()
+  clickBP.type = "bandpass"
+  clickBP.frequency.value = 4000
+  clickBP.Q.value = 3
+  const clickGain = ctx.createGain()
+  clickGain.gain.setValueAtTime(vol * 0.2, time)
+  clickGain.gain.exponentialRampToValueAtTime(0.001, time + 0.005)
+  clickSrc.connect(clickBP)
+  clickBP.connect(clickGain)
+
+  const mix = ctx.createGain()
+  oscGain.connect(mix)
+  bodyGain.connect(mix)
+  clickGain.connect(mix)
+
+  // Highpass to remove mud
+  const hp = ctx.createBiquadFilter()
+  hp.type = "highpass"
+  hp.frequency.value = 80
+  mix.connect(hp)
+
+  const dryG = ctx.createGain()
+  const wetG = ctx.createGain()
+  dryG.gain.value = 1 - revAmt
+  wetG.gain.value = revAmt
+  hp.connect(dryG)
+  hp.connect(wetG)
+  dryG.connect(dest)
+  wetG.connect(reverbSend)
+
+  osc.start(time)
+  osc.stop(time + duration + 0.1)
+  bodySrc.start(time)
+  bodySrc.stop(time + 0.09)
+  clickSrc.start(time)
+  clickSrc.stop(time + 0.01)
+}
+
+// --- 3. RHODES: electric piano with tine attack and warm bell body ---
+export function playRhodesSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
+  // Tine attack: short bright sine burst
+  const tineOsc = ctx.createOscillator()
+  tineOsc.type = "sine"
+  tineOsc.frequency.value = freq * 2.5
+  const tineGain = ctx.createGain()
+  tineGain.gain.setValueAtTime(vol * 0.35, time)
+  tineGain.gain.exponentialRampToValueAtTime(0.001, time + 0.02)
+  tineOsc.connect(tineGain)
+
+  // Main body: FM bell-tone
+  const carrier = ctx.createOscillator()
+  carrier.type = "sine"
+  carrier.frequency.value = freq
+  const mod = ctx.createOscillator()
+  mod.type = "sine"
+  mod.frequency.value = freq * 2
+  const modGain = ctx.createGain()
+  modGain.gain.setValueAtTime(freq * 1.2, time)
+  modGain.gain.exponentialRampToValueAtTime(freq * 0.08, time + 0.2)
+  mod.connect(modGain)
+  modGain.connect(carrier.frequency)
+
+  // Warm overtone
+  const overtone = ctx.createOscillator()
+  overtone.type = "triangle"
+  overtone.frequency.value = freq * 1.5
+  const overtoneGain = ctx.createGain()
+  overtoneGain.gain.value = 0.25
+  overtone.connect(overtoneGain)
+
+  // Filter
+  const filter = ctx.createBiquadFilter()
+  filter.type = "lowpass"
+  filter.frequency.value = 6000
+  filter.Q.value = 0.8
+
+  // Envelope: fast attack, gentle sustain, medium release
+  const env = ctx.createGain()
+  env.gain.setValueAtTime(0.0001, time)
+  env.gain.linearRampToValueAtTime(vol * 0.32, time + 0.008)
+  env.gain.setValueAtTime(vol * 0.18, time + 0.04)
+  env.gain.linearRampToValueAtTime(0.0001, time + duration)
+
+  carrier.connect(filter)
+  overtoneGain.connect(filter)
+  filter.connect(env)
+  tineGain.connect(env)
+
+  const dryG = ctx.createGain()
+  const wetG = ctx.createGain()
+  dryG.gain.value = 1 - revAmt
+  wetG.gain.value = revAmt
+  env.connect(dryG)
+  env.connect(wetG)
+  dryG.connect(dest)
+  wetG.connect(reverbSend)
+
+  carrier.start(time)
+  mod.start(time)
+  overtone.start(time)
+  tineOsc.start(time)
+  carrier.stop(time + duration + 0.1)
+  mod.stop(time + duration + 0.1)
+  overtone.stop(time + duration + 0.1)
+  tineOsc.stop(time + 0.03)
+}
+
+// --- 4. ACID: classic 303-style acid with resonant filter envelope ---
+export function playAcidSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
+  // Sawtooth main voice
+  const osc = ctx.createOscillator()
+  osc.type = "sawtooth"
+  osc.frequency.value = freq
+
+  // Sub oscillator
+  const sub = ctx.createOscillator()
+  sub.type = "square"
+  sub.frequency.value = Math.max(20, freq / 2)
+  const subGain = ctx.createGain()
+  subGain.gain.value = 0.35
+
+  // Resonant lowpass filter with envelope
+  const filter = ctx.createBiquadFilter()
+  filter.type = "lowpass"
+  filter.Q.value = 12
+  filter.frequency.setValueAtTime(800, time)
+  filter.frequency.exponentialRampToValueAtTime(5000, time + 0.03)
+  filter.frequency.exponentialRampToValueAtTime(300, time + duration * 0.4)
+
+  // Distortion for acid bite
+  const shaper = ctx.createWaveShaper()
+  shaper.curve = makeSoftClipCurve(256, 3.0)
+
+  // Envelope: snappy attack, tight decay
+  const env = ctx.createGain()
+  env.gain.setValueAtTime(0.0001, time)
+  env.gain.linearRampToValueAtTime(vol * 0.35, time + 0.005)
+  env.gain.setValueAtTime(vol * 0.28, time + 0.03)
+  env.gain.exponentialRampToValueAtTime(0.001, time + Math.min(duration, 1.5))
+
+  osc.connect(filter)
+  sub.connect(subGain)
+  subGain.connect(filter)
+  filter.connect(shaper)
+  shaper.connect(env)
+
+  const dryG = ctx.createGain()
+  const wetG = ctx.createGain()
+  dryG.gain.value = 1 - revAmt
+  wetG.gain.value = revAmt
+  env.connect(dryG)
+  env.connect(wetG)
+  dryG.connect(dest)
+  wetG.connect(reverbSend)
+
+  osc.start(time)
+  sub.start(time)
+  osc.stop(time + duration + 0.1)
+  sub.stop(time + duration + 0.1)
+}
+
+// --- 5. VOX: vocal choir pad using formant bandpass filters ---
+export function playVoxSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
+  // Formant frequencies (approximate vowel "aah")
+  const formants = [850, 1220, 2800]
+  const formantGains = [1.0, 0.6, 0.3]
+  const mixBus = ctx.createGain()
+
+  // 3 detuned sawtooth voices
+  const detuneCents = [-8, 0, +8]
+  for (const cents of detuneCents) {
+    const osc = ctx.createOscillator()
+    osc.type = "sawtooth"
+    osc.frequency.value = freq
+    osc.detune.value = cents
+    const oscGain = ctx.createGain()
+    oscGain.gain.value = 0.18
+    osc.connect(oscGain)
+    osc.start(time)
+    osc.stop(time + duration + 0.1)
+
+    // Formant filter chain
+    for (let i = 0; i < formants.length; i++) {
+      const bp = ctx.createBiquadFilter()
+      bp.type = "bandpass"
+      bp.frequency.value = formants[i]
+      bp.Q.value = 6
+      const g = ctx.createGain()
+      g.gain.value = formantGains[i]
+      oscGain.connect(bp)
+      bp.connect(g)
+      g.connect(mixBus)
+    }
+  }
+
+  // Envelope: slow attack, sustained, gentle release
+  const env = ctx.createGain()
+  env.gain.setValueAtTime(0.0001, time)
+  env.gain.linearRampToValueAtTime(vol * 0.12, time + 0.4)
+  env.gain.setValueAtTime(vol * 0.1, time + duration - 0.4)
+  env.gain.linearRampToValueAtTime(0.0001, time + duration)
+
+  mixBus.connect(env)
+
+  const dryG = ctx.createGain()
+  const wetG = ctx.createGain()
+  dryG.gain.value = 1 - revAmt
+  wetG.gain.value = revAmt
+  env.connect(dryG)
+  env.connect(wetG)
+  dryG.connect(dest)
+  wetG.connect(reverbSend)
+}
+
+// --- 6. GLASS: crystalline FM bell with multiple inharmonic ratios ---
+export function playGlassSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
+  // FM pairs with inharmonic ratios for glass-like tone
+  const pairs = [
+    { car: freq, mod: freq * 2.7, idx: 2.0, gain: 0.35 },
+    { car: freq * 1.8, mod: freq * 4.1, idx: 1.2, gain: 0.25 },
+    { car: freq * 3.2, mod: freq * 7.3, idx: 0.8, gain: 0.15 },
+  ]
+
+  const mixBus = ctx.createGain()
+
+  for (const p of pairs) {
+    const carrier = ctx.createOscillator()
+    carrier.type = "sine"
+    carrier.frequency.value = p.car
+    const modulator = ctx.createOscillator()
+    modulator.type = "sine"
+    modulator.frequency.value = p.mod
+    const modGain = ctx.createGain()
+    modGain.gain.setValueAtTime(p.car * p.idx, time)
+    modGain.gain.exponentialRampToValueAtTime(0.001, time + duration * 0.5)
+    modulator.connect(modGain)
+    modGain.connect(carrier.frequency)
+
+    const g = ctx.createGain()
+    g.gain.value = p.gain
+    carrier.connect(g)
+    g.connect(mixBus)
+    carrier.start(time)
+    carrier.stop(time + duration + 0.1)
+    modulator.start(time)
+    modulator.stop(time + duration + 0.1)
+  }
+
+  // Pure sine body for warmth
+  const body = ctx.createOscillator()
+  body.type = "sine"
+  body.frequency.value = freq
+  const bodyGain = ctx.createGain()
+  bodyGain.gain.value = 0.5
+  body.connect(bodyGain)
+  bodyGain.connect(mixBus)
+  body.start(time)
+  body.stop(time + duration + 0.1)
+
+  // Highpass to remove mud
+  const hp = ctx.createBiquadFilter()
+  hp.type = "highpass"
+  hp.frequency.value = 100
+
+  // Envelope: fast attack, very long decay
+  const env = ctx.createGain()
+  env.gain.setValueAtTime(0.0001, time)
+  env.gain.linearRampToValueAtTime(vol * 0.25, time + 0.01)
+  env.gain.exponentialRampToValueAtTime(0.0001, time + duration * 0.9)
+
+  mixBus.connect(hp)
+  hp.connect(env)
+
+  const dryG = ctx.createGain()
+  const wetG = ctx.createGain()
+  dryG.gain.value = 1 - revAmt
+  wetG.gain.value = revAmt
+  env.connect(dryG)
+  env.connect(wetG)
+  dryG.connect(dest)
+  wetG.connect(reverbSend)
+}
+
+// --- 7. ANALOG: vintage analog synth with pulse wave, sub, gentle filter ---
+export function playAnalogSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
+  // Pulse wave main
+  const pulse = ctx.createOscillator()
+  pulse.type = "square"
+  pulse.frequency.value = freq
+
+  // Sub octave
+  const sub = ctx.createOscillator()
+  sub.type = "sine"
+  sub.frequency.value = Math.max(20, freq / 2)
+  const subGain = ctx.createGain()
+  subGain.gain.value = 0.35
+
+  // Slightly detuned saw for warmth
+  const saw = ctx.createOscillator()
+  saw.type = "sawtooth"
+  saw.frequency.value = freq
+  saw.detune.value = 3
+  const sawGain = ctx.createGain()
+  sawGain.gain.value = 0.2
+
+  // Gentle filter envelope
+  const filter = ctx.createBiquadFilter()
+  filter.type = "lowpass"
+  filter.frequency.setValueAtTime(4000, time)
+  filter.frequency.exponentialRampToValueAtTime(1200, time + duration * 0.5)
+  filter.Q.value = 1.5
+
+  // Warm saturation
+  const shaper = ctx.createWaveShaper()
+  shaper.curve = makeSoftClipCurve(512, 1.4)
+
+  // Envelope: medium attack, full sustain, gentle release
+  const env = ctx.createGain()
+  env.gain.setValueAtTime(0.0001, time)
+  env.gain.linearRampToValueAtTime(vol * 0.22, time + 0.06)
+  env.gain.setValueAtTime(vol * 0.2, time + duration - 0.2)
+  env.gain.linearRampToValueAtTime(0.0001, time + duration)
+
+  pulse.connect(filter)
+  sub.connect(subGain)
+  subGain.connect(filter)
+  saw.connect(sawGain)
+  sawGain.connect(filter)
+  filter.connect(shaper)
+  shaper.connect(env)
+
+  const dryG = ctx.createGain()
+  const wetG = ctx.createGain()
+  dryG.gain.value = 1 - revAmt
+  wetG.gain.value = revAmt
+  env.connect(dryG)
+  env.connect(wetG)
+  dryG.connect(dest)
+  wetG.connect(reverbSend)
+
+  pulse.start(time)
+  sub.start(time)
+  saw.start(time)
+  pulse.stop(time + duration + 0.1)
+  sub.stop(time + duration + 0.1)
+  saw.stop(time + duration + 0.1)
+}
+
+// --- 8. FUTURE: modern future bass chord stack with 7 detuned saws ---
+export function playFutureSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
+  const detuneCents = [-18, -12, -6, -2, 0, +2, +6, +12, +18]
+  const filter = ctx.createBiquadFilter()
+  filter.type = "lowpass"
+  filter.frequency.setValueAtTime(7000, time)
+  filter.frequency.exponentialRampToValueAtTime(2000, time + duration * 0.4)
+  filter.Q.value = 2.5
+
+  // Wide stereo via slight delay (simulated)
+  const mixBus = ctx.createGain()
+
+  for (const cents of detuneCents) {
+    const osc = ctx.createOscillator()
+    osc.type = "sawtooth"
+    osc.frequency.value = freq
+    osc.detune.value = cents
+    const g = ctx.createGain()
+    g.gain.value = 0.09
+    osc.connect(g)
+    g.connect(mixBus)
+    osc.start(time)
+    osc.stop(time + duration + 0.1)
+  }
+
+  // Highpass to remove sub mud
+  const hp = ctx.createBiquadFilter()
+  hp.type = "highpass"
+  hp.frequency.value = 120
+
+  // Envelope: punchy attack, full sustain
+  const env = ctx.createGain()
+  env.gain.setValueAtTime(0.0001, time)
+  env.gain.linearRampToValueAtTime(vol * 0.18, time + 0.02)
+  env.gain.setValueAtTime(vol * 0.16, time + duration - 0.1)
+  env.gain.linearRampToValueAtTime(0.0001, time + duration)
+
+  mixBus.connect(filter)
+  filter.connect(hp)
+  hp.connect(env)
+
+  // Soft saturation
+  const shaper = ctx.createWaveShaper()
+  shaper.curve = makeSoftClipCurve(256, 1.2)
+  env.connect(shaper)
+
+  const dryG = ctx.createGain()
+  const wetG = ctx.createGain()
+  dryG.gain.value = 1 - revAmt
+  wetG.gain.value = revAmt
+  shaper.connect(dryG)
+  shaper.connect(wetG)
+  dryG.connect(dest)
+  wetG.connect(reverbSend)
+}
+
+// --- 9. ARP: classic 80s digital arpeggio pluck with square wave ---
+export function playArpSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
+  // Main square wave
+  const osc = ctx.createOscillator()
+  osc.type = "square"
+  osc.frequency.value = freq
+
+  // Octave up for brightness
+  const oct = ctx.createOscillator()
+  oct.type = "square"
+  oct.frequency.value = freq * 2
+  const octGain = ctx.createGain()
+  octGain.gain.value = 0.3
+
+  // Fast filter pluck
+  const filter = ctx.createBiquadFilter()
+  filter.type = "lowpass"
+  filter.frequency.setValueAtTime(9000, time)
+  filter.frequency.exponentialRampToValueAtTime(500, time + 0.18)
+  filter.Q.value = 3.0
+
+  // Bright transient noise
+  const noiseDur = 0.02
   const noiseBuf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * noiseDur), ctx.sampleRate)
   const noiseData = noiseBuf.getChannelData(0)
   for (let i = 0; i < noiseData.length; i++) {
-    noiseData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / noiseData.length, 4)
+    noiseData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / noiseData.length, 5)
   }
   const noiseSrc = ctx.createBufferSource()
   noiseSrc.buffer = noiseBuf
-  const noiseBP = ctx.createBiquadFilter()
-  noiseBP.type = "bandpass"
-  noiseBP.frequency.value = freq * 2
-  noiseBP.Q.value = 2
+  const noiseHP = ctx.createBiquadFilter()
+  noiseHP.type = "highpass"
+  noiseHP.frequency.value = 6000
   const noiseGain = ctx.createGain()
-  noiseGain.gain.setValueAtTime(vol * 0.35, time)
+  noiseGain.gain.setValueAtTime(vol * 0.15, time)
   noiseGain.gain.exponentialRampToValueAtTime(0.001, time + noiseDur)
-  noiseSrc.connect(noiseBP)
-  noiseBP.connect(noiseGain)
-
-  // Main voice: triangle + sine 2nd harmonic with fast filter close
-  const osc1 = ctx.createOscillator()
-  const osc2 = ctx.createOscillator()
-  osc1.type = "triangle"
-  osc2.type = "sine"
-  osc1.frequency.value = freq
-  osc2.frequency.value = freq * 2.002
-  const osc2Gain = ctx.createGain()
-  osc2Gain.gain.value = 0.3
-
-  const filter = ctx.createBiquadFilter()
-  filter.type = "lowpass"
-  filter.frequency.setValueAtTime(8000, time)
-  filter.frequency.exponentialRampToValueAtTime(600, time + 0.15)
-  filter.Q.value = 2.5
+  noiseSrc.connect(noiseHP)
+  noiseHP.connect(noiseGain)
 
   // Fast exponential decay
   const env = ctx.createGain()
-  env.gain.setValueAtTime(vol * 0.45, time)
-  env.gain.exponentialRampToValueAtTime(0.001, time + Math.min(duration * 0.8, 2.0))
+  env.gain.setValueAtTime(vol * 0.4, time)
+  env.gain.exponentialRampToValueAtTime(0.001, time + Math.min(duration * 0.7, 1.5))
 
-  osc1.connect(filter)
-  osc2.connect(osc2Gain)
-  osc2Gain.connect(filter)
+  osc.connect(filter)
+  oct.connect(octGain)
+  octGain.connect(filter)
+  noiseGain.connect(filter)
+  filter.connect(env)
+
+  const dryG = ctx.createGain()
+  const wetG = ctx.createGain()
+  dryG.gain.value = 1 - revAmt
+  wetG.gain.value = revAmt
+  env.connect(dryG)
+  env.connect(wetG)
+  dryG.connect(dest)
+  wetG.connect(reverbSend)
+
+  osc.start(time)
+  oct.start(time)
+  noiseSrc.start(time)
+  osc.stop(time + duration + 0.1)
+  oct.stop(time + duration + 0.1)
+  noiseSrc.stop(time + noiseDur + 0.01)
+}
+
+// --- 10. SWELL: cinematic orchestral swell using filtered noise + fundamental ---
+export function playSwellSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
+  // Noise layer for breath/airy texture
+  const noiseBuf = getNoiseBuffer(ctx, 2)
+  const noiseSrc = ctx.createBufferSource()
+  noiseSrc.buffer = noiseBuf
+  const noiseLP = ctx.createBiquadFilter()
+  noiseLP.type = "lowpass"
+  noiseLP.frequency.setValueAtTime(800, time)
+  noiseLP.frequency.linearRampToValueAtTime(200, time + duration * 0.6)
+  noiseLP.Q.value = 1.0
+  const noiseGain = ctx.createGain()
+  noiseGain.gain.setValueAtTime(0.0001, time)
+  noiseGain.gain.linearRampToValueAtTime(vol * 0.08, time + 0.8)
+  noiseGain.gain.linearRampToValueAtTime(0.0001, time + duration)
+  noiseSrc.connect(noiseLP)
+  noiseLP.connect(noiseGain)
+
+  // Fundamental sine for pitch center
+  const fund = ctx.createOscillator()
+  fund.type = "sine"
+  fund.frequency.value = freq
+  const fundGain = ctx.createGain()
+  fundGain.gain.value = 0.4
+  fund.connect(fundGain)
+
+  // Warm overtone
+  const overtone = ctx.createOscillator()
+  overtone.type = "triangle"
+  overtone.frequency.value = freq * 2
+  const overtoneGain = ctx.createGain()
+  overtoneGain.gain.value = 0.25
+  overtone.connect(overtoneGain)
+
+  // Filter
+  const filter = ctx.createBiquadFilter()
+  filter.type = "lowpass"
+  filter.frequency.setValueAtTime(300, time)
+  filter.frequency.linearRampToValueAtTime(3500, time + duration * 0.3)
+  filter.frequency.linearRampToValueAtTime(600, time + duration * 0.8)
+  filter.Q.value = 2.0
+
+  // Slow swell envelope
+  const env = ctx.createGain()
+  env.gain.setValueAtTime(0.0001, time)
+  env.gain.linearRampToValueAtTime(vol * 0.18, time + duration * 0.25)
+  env.gain.setValueAtTime(vol * 0.15, time + duration * 0.7)
+  env.gain.linearRampToValueAtTime(0.0001, time + duration)
+
+  fundGain.connect(filter)
+  overtoneGain.connect(filter)
   noiseGain.connect(filter)
   filter.connect(env)
 
@@ -581,586 +1079,11 @@ export function playPluckSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSen
   wetG.connect(reverbSend)
 
   noiseSrc.start(time)
-  osc1.start(time)
-  osc2.start(time)
-  noiseSrc.stop(time + noiseDur + 0.01)
-  osc1.stop(time + duration + 0.1)
-  osc2.stop(time + duration + 0.1)
-}
-
-// --- KEYS: FM electric piano (DX7-style bell-tone) ---
-export function playKeysSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  // Carrier
-  const carrier = ctx.createOscillator()
-  carrier.type = "sine"
-  carrier.frequency.value = freq
-
-  // Modulator for FM bell character
-  const mod = ctx.createOscillator()
-  mod.type = "sine"
-  mod.frequency.value = freq * 7 // High ratio for bell
-
-  const modGain = ctx.createGain()
-  // FM index decays — bright attack, mellow sustain
-  modGain.gain.setValueAtTime(freq * 2.0, time)
-  modGain.gain.exponentialRampToValueAtTime(freq * 0.05, time + 0.3)
-  mod.connect(modGain)
-  modGain.connect(carrier.frequency)
-
-  // Secondary tone: triangle at fundamental
-  const osc2 = ctx.createOscillator()
-  osc2.type = "triangle"
-  osc2.frequency.value = freq
-  const osc2Gain = ctx.createGain()
-  osc2Gain.gain.value = 0.4
-
-  const filter = ctx.createBiquadFilter()
-  filter.type = "lowpass"
-  filter.frequency.value = 5000
-
-  // Envelope: percussive attack, medium sustain
-  const env = ctx.createGain()
-  env.gain.setValueAtTime(vol * 0.35, time)
-  env.gain.setValueAtTime(vol * 0.2, time + 0.04)
-  env.gain.linearRampToValueAtTime(0.0001, time + duration)
-
-  carrier.connect(filter)
-  osc2.connect(osc2Gain)
-  osc2Gain.connect(filter)
-  filter.connect(env)
-
-  const dryG = ctx.createGain()
-  const wetG = ctx.createGain()
-  dryG.gain.value = 1 - revAmt
-  wetG.gain.value = revAmt
-  env.connect(dryG)
-  env.connect(wetG)
-  dryG.connect(dest)
-  wetG.connect(reverbSend)
-
-  carrier.start(time)
-  mod.start(time)
-  osc2.start(time)
-  carrier.stop(time + duration + 0.1)
-  mod.stop(time + duration + 0.1)
-  osc2.stop(time + duration + 0.1)
-}
-
-// --- STRINGS: lush ensemble with LFO vibrato ---
-export function playStringsSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  const detuneCents = [-12, -6, -2, 0, +2, +6, +12]
-  const filter = ctx.createBiquadFilter()
-  filter.type = "lowpass"
-  filter.frequency.value = 3500
-  filter.Q.value = 0.7
-
-  // Vibrato LFO
-  const vibrato = ctx.createOscillator()
-  vibrato.type = "sine"
-  vibrato.frequency.value = 4.5
-  const vibratoGain = ctx.createGain()
-  vibratoGain.gain.value = 3 // cents of vibrato
-  vibrato.connect(vibratoGain)
-
-  for (const cents of detuneCents) {
-    const osc = ctx.createOscillator()
-    osc.type = "sawtooth"
-    osc.frequency.value = freq
-    osc.detune.value = cents
-    vibratoGain.connect(osc.detune)
-    const g = ctx.createGain()
-    g.gain.value = 0.09
-    osc.connect(g)
-    g.connect(filter)
-    osc.start(time)
-    osc.stop(time + duration + 0.1)
-  }
-
-  // Envelope: slow swell
-  const env = ctx.createGain()
-  env.gain.setValueAtTime(0.0001, time)
-  env.gain.linearRampToValueAtTime(vol * 0.16, time + 0.3)
-  env.gain.setValueAtTime(vol * 0.14, time + duration - 0.2)
-  env.gain.linearRampToValueAtTime(0.0001, time + duration)
-  filter.connect(env)
-
-  const dryG = ctx.createGain()
-  const wetG = ctx.createGain()
-  dryG.gain.value = 1 - revAmt
-  wetG.gain.value = revAmt
-  env.connect(dryG)
-  env.connect(wetG)
-  dryG.connect(dest)
-  wetG.connect(reverbSend)
-
-  vibrato.start(time)
-  vibrato.stop(time + duration + 0.1)
-}
-
-// --- ORGAN: drawbar organ with key click and rotary sim ---
-export function playOrganSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  // Drawbar harmonics with realistic ratios
-  const drawbars = [
-    { harmonic: 0.5, gain: 0.15 }, // sub
-    { harmonic: 1,   gain: 1.0 },   // fundamental
-    { harmonic: 2,   gain: 0.8 },   // octave
-    { harmonic: 3,   gain: 0.55 },  // 12th
-    { harmonic: 4,   gain: 0.4 },   // 2 octave
-    { harmonic: 6,   gain: 0.25 },  // 19th
-    { harmonic: 8,   gain: 0.15 },  // 3 octave
-    { harmonic: 10,  gain: 0.08 },  // Tierce
-  ]
-
-  // Rotary speaker simulation via LFO on filter
-  const rotary = ctx.createOscillator()
-  rotary.type = "sine"
-  rotary.frequency.value = 5.5
-  const rotaryGain = ctx.createGain()
-  rotaryGain.gain.value = 500
-  rotary.connect(rotaryGain)
-
-  const filter = ctx.createBiquadFilter()
-  filter.type = "lowpass"
-  filter.frequency.value = 4500
-  filter.Q.value = 1.0
-  rotaryGain.connect(filter.frequency)
-
-  // Key click
-  const clickBuf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.003), ctx.sampleRate)
-  const clickData = clickBuf.getChannelData(0)
-  for (let i = 0; i < clickData.length; i++) {
-    clickData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / clickData.length, 8)
-  }
-  const clickSrc = ctx.createBufferSource()
-  clickSrc.buffer = clickBuf
-  const clickGain = ctx.createGain()
-  clickGain.gain.setValueAtTime(vol * 0.15, time)
-  clickGain.gain.exponentialRampToValueAtTime(0.001, time + 0.003)
-  clickSrc.connect(clickGain)
-  clickGain.connect(filter)
-
-  const env = ctx.createGain()
-  env.gain.setValueAtTime(0.0001, time)
-  env.gain.linearRampToValueAtTime(vol * 0.13, time + 0.008)
-  env.gain.setValueAtTime(vol * 0.13, time + duration - 0.08)
-  env.gain.linearRampToValueAtTime(0.0001, time + duration)
-
-  for (const drawbar of drawbars) {
-    const osc = ctx.createOscillator()
-    osc.type = "sine"
-    osc.frequency.value = freq * drawbar.harmonic
-    const g = ctx.createGain()
-    g.gain.value = drawbar.gain
-    osc.connect(g)
-    g.connect(filter)
-    osc.start(time)
-    osc.stop(time + duration + 0.1)
-  }
-
-  filter.connect(env)
-
-  const dryG = ctx.createGain()
-  const wetG = ctx.createGain()
-  dryG.gain.value = 1 - revAmt
-  wetG.gain.value = revAmt
-  env.connect(dryG)
-  env.connect(wetG)
-  dryG.connect(dest)
-  wetG.connect(reverbSend)
-
-  rotary.start(time)
-  rotary.stop(time + duration + 0.1)
-  clickSrc.start(time)
-  clickSrc.stop(time + 0.005)
-}
-
-// --- BELL: FM bell with inharmonic partials + exponential decay ---
-export function playBellSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  // FM pair 1: fundamental
-  const car1 = ctx.createOscillator()
-  car1.type = "sine"
-  car1.frequency.value = freq
-  const mod1 = ctx.createOscillator()
-  mod1.type = "sine"
-  mod1.frequency.value = freq * 3.5 // Inharmonic ratio
-  const mod1Gain = ctx.createGain()
-  mod1Gain.gain.setValueAtTime(freq * 1.5, time)
-  mod1Gain.gain.exponentialRampToValueAtTime(0.001, time + duration * 0.5)
-  mod1.connect(mod1Gain)
-  mod1Gain.connect(car1.frequency)
-
-  // FM pair 2: high partial
-  const car2 = ctx.createOscillator()
-  car2.type = "sine"
-  car2.frequency.value = freq * 2.4
-  const mod2 = ctx.createOscillator()
-  mod2.type = "sine"
-  mod2.frequency.value = freq * 5.3
-  const mod2Gain = ctx.createGain()
-  mod2Gain.gain.setValueAtTime(freq * 0.8, time)
-  mod2Gain.gain.exponentialRampToValueAtTime(0.001, time + duration * 0.3)
-  mod2.connect(mod2Gain)
-  mod2Gain.connect(car2.frequency)
-
-  const car2Gain = ctx.createGain()
-  car2Gain.gain.value = 0.4
-
-  // Pure sine body
-  const body = ctx.createOscillator()
-  body.type = "sine"
-  body.frequency.value = freq
-  const bodyGain = ctx.createGain()
-  bodyGain.gain.value = 0.6
-
-  // Envelope: fast attack, very long exponential tail
-  const env = ctx.createGain()
-  env.gain.setValueAtTime(vol * 0.22, time)
-  env.gain.exponentialRampToValueAtTime(0.0001, time + duration * 0.95)
-
-  car1.connect(env)
-  car2.connect(car2Gain)
-  car2Gain.connect(env)
-  body.connect(bodyGain)
-  bodyGain.connect(env)
-
-  const dryG = ctx.createGain()
-  const wetG = ctx.createGain()
-  dryG.gain.value = 1 - revAmt
-  wetG.gain.value = revAmt
-  env.connect(dryG)
-  env.connect(wetG)
-  dryG.connect(dest)
-  wetG.connect(reverbSend)
-
-  car1.start(time); mod1.start(time)
-  car2.start(time); mod2.start(time)
-  body.start(time)
-  car1.stop(time + duration + 0.1); mod1.stop(time + duration + 0.1)
-  car2.stop(time + duration + 0.1); mod2.stop(time + duration + 0.1)
-  body.stop(time + duration + 0.1)
-}
-
-// --- BASS: sub + pulse + drive with proper low-end ---
-export function playBassSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  // Sub oscillator (one octave down for low-end weight)
-  const sub = ctx.createOscillator()
-  sub.type = "sine"
-  sub.frequency.value = Math.max(20, freq / 2) // Don't go below 20Hz
-
-  // Main voice: square wave with saturation
-  const pulse = ctx.createOscillator()
-  pulse.type = "square"
-  pulse.frequency.value = freq
-
-  // Octave up for grit
-  const oct = ctx.createOscillator()
-  oct.type = "sawtooth"
-  oct.frequency.value = freq
-  const octGain = ctx.createGain()
-  octGain.gain.value = 0.2
-
-  // Filter with envelope for punch
-  const filter = ctx.createBiquadFilter()
-  filter.type = "lowpass"
-  filter.frequency.setValueAtTime(800, time)
-  filter.frequency.exponentialRampToValueAtTime(180, time + 0.2)
-  filter.Q.value = 4
-
-  // Distortion for warmth
-  const shaper = ctx.createWaveShaper()
-  shaper.curve = makeSoftClipCurve(512, 2.0)
-
-  // Envelope: punchy attack, controlled sustain
-  const env = ctx.createGain()
-  env.gain.setValueAtTime(vol * 0.4, time)
-  env.gain.setValueAtTime(vol * 0.28, time + 0.03)
-  env.gain.linearRampToValueAtTime(0.0001, time + Math.min(duration, 2.0))
-
-  sub.connect(filter)
-  pulse.connect(filter)
-  oct.connect(octGain)
-  octGain.connect(filter)
-  filter.connect(shaper)
-  shaper.connect(env)
-
-  const dryG = ctx.createGain()
-  const wetG = ctx.createGain()
-  dryG.gain.value = (1 - revAmt) * 0.7 // Bass gets less reverb
-  wetG.gain.value = revAmt * 0.3
-  env.connect(dryG)
-  env.connect(wetG)
-  dryG.connect(dest)
-  wetG.connect(reverbSend)
-
-  sub.start(time); pulse.start(time); oct.start(time)
-  sub.stop(time + duration + 0.1)
-  pulse.stop(time + duration + 0.1)
-  oct.stop(time + duration + 0.1)
-}
-
-// --- LEAD: unison saw with filter envelope ---
-export function playLeadSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  const detuneCents = [-7, -3, 0, +3, +7]
-  const filter = ctx.createBiquadFilter()
-  filter.type = "lowpass"
-  filter.frequency.setValueAtTime(6000, time)
-  filter.frequency.exponentialRampToValueAtTime(800, time + duration * 0.6)
-  filter.Q.value = 4
-
-  // Slight portamento for expression
-  for (const cents of detuneCents) {
-    const osc = ctx.createOscillator()
-    osc.type = "sawtooth"
-    osc.frequency.value = freq
-    osc.detune.value = cents
-    const g = ctx.createGain()
-    g.gain.value = 0.18
-    osc.connect(g)
-    g.connect(filter)
-    osc.start(time)
-    osc.stop(time + duration + 0.1)
-  }
-
-  // Envelope: snappy attack, slight decay, long sustain
-  const env = ctx.createGain()
-  env.gain.setValueAtTime(0.0001, time)
-  env.gain.linearRampToValueAtTime(vol * 0.28, time + 0.01)
-  env.gain.setValueAtTime(vol * 0.22, time + 0.06)
-  env.gain.linearRampToValueAtTime(0.0001, time + duration)
-
-  // Saturation for presence
-  const shaper = ctx.createWaveShaper()
-  shaper.curve = makeSoftClipCurve(256, 1.0)
-
-  filter.connect(shaper)
-  shaper.connect(env)
-
-  const dryG = ctx.createGain()
-  const wetG = ctx.createGain()
-  dryG.gain.value = 1 - revAmt
-  wetG.gain.value = revAmt
-  env.connect(dryG)
-  env.connect(wetG)
-  dryG.connect(dest)
-  wetG.connect(reverbSend)
-}
-
-// --- BRASS: saw stack with bright attack + filter envelope ---
-export function playBrassSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  const detuneCents = [-5, 0, +5]
-  const filter = ctx.createBiquadFilter()
-  filter.type = "lowpass"
-  filter.frequency.setValueAtTime(200, time)
-  filter.frequency.linearRampToValueAtTime(4000, time + 0.06)
-  filter.frequency.linearRampToValueAtTime(1800, time + duration * 0.5)
-  filter.Q.value = 2.0
-
-  for (const cents of detuneCents) {
-    const osc = ctx.createOscillator()
-    osc.type = "sawtooth"
-    osc.frequency.value = freq
-    osc.detune.value = cents
-    const g = ctx.createGain()
-    g.gain.value = 0.22
-    osc.connect(g)
-    g.connect(filter)
-    osc.start(time)
-    osc.stop(time + duration + 0.1)
-  }
-
-  // Brass envelope: sharp attack, then hold
-  const env = ctx.createGain()
-  env.gain.setValueAtTime(0.0001, time)
-  env.gain.linearRampToValueAtTime(vol * 0.2, time + 0.04)
-  env.gain.setValueAtTime(vol * 0.17, time + 0.12)
-  env.gain.linearRampToValueAtTime(0.0001, time + duration)
-
-  filter.connect(env)
-
-  const dryG = ctx.createGain()
-  const wetG = ctx.createGain()
-  dryG.gain.value = 1 - revAmt
-  wetG.gain.value = revAmt
-  env.connect(dryG)
-  env.connect(wetG)
-  dryG.connect(dest)
-  wetG.connect(reverbSend)
-}
-
-// --- FM: complex FM with modulator envelope ---
-export function playFMSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  // Carrier
-  const carrier = ctx.createOscillator()
-  carrier.type = "sine"
-  carrier.frequency.value = freq
-
-  // Modulator 1: primary FM with envelope
-  const mod1 = ctx.createOscillator()
-  mod1.type = "sine"
-  mod1.frequency.value = freq * 2
-  const mod1Gain = ctx.createGain()
-  mod1Gain.gain.setValueAtTime(freq * 3.0, time)
-  mod1Gain.gain.exponentialRampToValueAtTime(freq * 0.1, time + duration * 0.4)
-  mod1.connect(mod1Gain)
-  mod1Gain.connect(carrier.frequency)
-
-  // Modulator 2: adds metallic shimmer (modulates the modulator)
-  const mod2 = ctx.createOscillator()
-  mod2.type = "sine"
-  mod2.frequency.value = freq * 7
-  const mod2Gain = ctx.createGain()
-  mod2Gain.gain.setValueAtTime(freq * 0.8, time)
-  mod2Gain.gain.exponentialRampToValueAtTime(0.001, time + duration * 0.2)
-  mod2.connect(mod2Gain)
-  mod2Gain.connect(mod1.frequency)
-
-  const filter = ctx.createBiquadFilter()
-  filter.type = "lowpass"
-  filter.frequency.value = 8000
-
-  // Envelope: percussive
-  const env = ctx.createGain()
-  env.gain.setValueAtTime(0.0001, time)
-  env.gain.linearRampToValueAtTime(vol * 0.28, time + 0.008)
-  env.gain.exponentialRampToValueAtTime(0.0001, time + duration)
-
-  carrier.connect(filter)
-  filter.connect(env)
-
-  const dryG = ctx.createGain()
-  const wetG = ctx.createGain()
-  dryG.gain.value = 1 - revAmt
-  wetG.gain.value = revAmt
-  env.connect(dryG)
-  env.connect(wetG)
-  dryG.connect(dest)
-  wetG.connect(reverbSend)
-
-  carrier.start(time); mod1.start(time); mod2.start(time)
-  carrier.stop(time + duration + 0.1)
-  mod1.stop(time + duration + 0.1)
-  mod2.stop(time + duration + 0.1)
-}
-
-// --- SUPERSAW: 9 detuned saws with wide filter + chorus LFO ---
-export function playSupersawSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number) {
-  const detuneCents = [-20, -14, -8, -3, 0, +3, +8, +14, +20]
-  const filter = ctx.createBiquadFilter()
-  filter.type = "lowpass"
-  filter.frequency.setValueAtTime(6000, time)
-  filter.frequency.linearRampToValueAtTime(1500, time + duration * 0.5)
-  filter.Q.value = 2.0
-
-  // Chorus LFO on filter
-  const chorus = ctx.createOscillator()
-  chorus.type = "sine"
-  chorus.frequency.value = 0.2
-  const chorusGain = ctx.createGain()
-  chorusGain.gain.value = 600
-  chorus.connect(chorusGain)
-  chorusGain.connect(filter.frequency)
-
-  for (const cents of detuneCents) {
-    const osc = ctx.createOscillator()
-    osc.type = "sawtooth"
-    osc.frequency.value = freq
-    osc.detune.value = cents
-    const g = ctx.createGain()
-    g.gain.value = 0.08 // Much lower per-voice to prevent clipping
-    osc.connect(g)
-    g.connect(filter)
-    osc.start(time)
-    osc.stop(time + duration + 0.1)
-  }
-
-  // Envelope: medium attack, long sustain
-  const env = ctx.createGain()
-  env.gain.setValueAtTime(0.0001, time)
-  env.gain.linearRampToValueAtTime(vol * 0.15, time + 0.06)
-  env.gain.setValueAtTime(vol * 0.15, time + duration - 0.1)
-  env.gain.linearRampToValueAtTime(0.0001, time + duration)
-
-  filter.connect(env)
-
-  // Soft clip for warmth
-  const shaper = ctx.createWaveShaper()
-  shaper.curve = makeSoftClipCurve(256, 0.8)
-  env.connect(shaper)
-
-  const dryG = ctx.createGain()
-  const wetG = ctx.createGain()
-  dryG.gain.value = 1 - revAmt
-  wetG.gain.value = revAmt
-  shaper.connect(dryG)
-  shaper.connect(wetG)
-  dryG.connect(dest)
-  wetG.connect(reverbSend)
-
-  chorus.start(time)
-  chorus.stop(time + duration + 0.1)
-}
-
-// --- WOBBLE: tempo-synced LFO on filter with distortion ---
-export function playWobbleSynth(ctx: BaseAudioContext, dest: AudioNode, reverbSend: AudioNode, freq: number, time: number, duration: number, vol: number, revAmt: number, bpm: number) {
-  // Dual oscillators for thickness
-  const osc1 = ctx.createOscillator()
-  const osc2 = ctx.createOscillator()
-  osc1.type = "sawtooth"
-  osc2.type = "square"
-  osc1.frequency.value = freq
-  osc2.frequency.value = freq * 1.005
-
-  // Filter with LFO wobble
-  const filter = ctx.createBiquadFilter()
-  filter.type = "lowpass"
-  filter.Q.value = 10
-  filter.frequency.value = 400
-
-  const lfo = ctx.createOscillator()
-  lfo.type = "sine"
-  const wobbleRate = (bpm / 60) * 2
-  lfo.frequency.value = wobbleRate
-  const lfoGain = ctx.createGain()
-  lfoGain.gain.value = 3000
-  lfo.connect(lfoGain)
-  lfoGain.connect(filter.frequency)
-  // Set base frequency higher so LFO sweep is wider
-  filter.frequency.value = 2500
-
-  // Highpass to remove mud
-  const hp = ctx.createBiquadFilter()
-  hp.type = "highpass"
-  hp.frequency.value = 150
-
-  // Distortion for grit
-  const shaper = ctx.createWaveShaper()
-  shaper.curve = makeSoftClipCurve(256, 2.5)
-
-  // Envelope
-  const env = ctx.createGain()
-  env.gain.setValueAtTime(vol * 0.25, time)
-  env.gain.setValueAtTime(vol * 0.25, time + duration - 0.1)
-  env.gain.linearRampToValueAtTime(0.0001, time + duration)
-
-  osc1.connect(filter)
-  osc2.connect(filter)
-  filter.connect(hp)
-  hp.connect(shaper)
-  shaper.connect(env)
-
-  const dryG = ctx.createGain()
-  const wetG = ctx.createGain()
-  dryG.gain.value = 1 - revAmt
-  wetG.gain.value = revAmt
-  env.connect(dryG)
-  env.connect(wetG)
-  dryG.connect(dest)
-  wetG.connect(reverbSend)
-
-  osc1.start(time); osc2.start(time); lfo.start(time)
-  osc1.stop(time + duration + 0.1)
-  osc2.stop(time + duration + 0.1)
-  lfo.stop(time + duration + 0.1)
+  noiseSrc.stop(time + duration + 0.1)
+  fund.start(time)
+  fund.stop(time + duration + 0.1)
+  overtone.start(time)
+  overtone.stop(time + duration + 0.1)
 }
 
 // ============================================================
@@ -1179,19 +1102,17 @@ export function playSynthNote(
   bpm: number
 ) {
   switch (synthType) {
-    case "pad":      playPadSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
-    case "pluck":    playPluckSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
-    case "keys":     playKeysSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
-    case "strings":  playStringsSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
-    case "organ":    playOrganSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
-    case "bell":     playBellSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
-    case "bass":     playBassSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
-    case "lead":     playLeadSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
-    case "brass":    playBrassSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
-    case "fm":       playFMSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
-    case "supersaw": playSupersawSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
-    case "wobble":   playWobbleSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt, bpm); break
-    default:        playPadSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
+    case "cloud":    playCloudSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
+    case "marimba":  playMarimbaSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
+    case "rhodes":   playRhodesSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
+    case "acid":     playAcidSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
+    case "vox":      playVoxSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
+    case "glass":    playGlassSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
+    case "analog":   playAnalogSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
+    case "future":   playFutureSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
+    case "arp":      playArpSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
+    case "swell":    playSwellSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
+    default:         playCloudSynth(ctx, dest, reverbSend, freq, time, duration, vol, revAmt); break
   }
 }
 
