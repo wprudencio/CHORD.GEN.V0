@@ -616,9 +616,10 @@ export default function ChordGenerator() {
   const schedulerTimerRef = useRef<number | null>(null)
   const progressionRef = useRef<Chord[]>([])
   const settingsRef = useRef(settings)
-  const activeNodesRef = useRef<Array<OscillatorNode | AudioBufferSourceNode>>([])
   const arpNoteIndexRef = useRef(0)
   const arpDirectionRef = useRef(1)
+  const skipProgressionGenerationRef = useRef(false)
+  const lastGenerateAllTimeRef = useRef(0)
 
   // Keep refs in sync
   useEffect(() => {
@@ -690,19 +691,6 @@ export default function ChordGenerator() {
       audioCtxRef.current.resume()
     }
   }, [createReverb])
-
-  const stopAllNodes = useCallback(() => {
-    const nodes = activeNodesRef.current
-    activeNodesRef.current = [] // Clear immediately to prevent stale refs
-    nodes.forEach((node) => {
-      try {
-        node.stop()
-        node.disconnect()
-      } catch {
-        // Node might already be stopped
-      }
-    })
-  }, [])
 
     const playSingleNote = useCallback((freq: number, time: number, duration: number, synthType: string) => {
       if (!audioCtxRef.current || !masterGainRef.current || !reverbNodeRef.current) return
@@ -923,6 +911,14 @@ export default function ChordGenerator() {
   }, [key, mode, style])
 
   const generateAll = useCallback(() => {
+    // Cooldown to prevent rapid clicks from causing re-render storm
+    const now = Date.now()
+    if (now - lastGenerateAllTimeRef.current < 300) return
+    lastGenerateAllTimeRef.current = now
+
+    // Tell auto-generation effect to skip so it doesn't overwrite our progression
+    skipProgressionGenerationRef.current = true
+
     const allNotes = NOTES
     const allModes = Object.keys(SCALES)
     const allStyles = Object.keys(STYLE_PROGRESSIONS)
@@ -1103,9 +1099,6 @@ export default function ChordGenerator() {
       schedulerTimerRef.current = null
     }
 
-    // Stop all active audio nodes
-    stopAllNodes()
-
     // Reset and re-initialize audio context for clean state
     if (audioCtxRef.current) {
       audioCtxRef.current.close()
@@ -1113,7 +1106,7 @@ export default function ChordGenerator() {
       masterGainRef.current = null
       reverbNodeRef.current = null
     }
-  }, [stopAllNodes])
+  }, [])
 
   const playChordPreview = useCallback(
     (index: number) => {
@@ -1134,6 +1127,8 @@ export default function ChordGenerator() {
   }, [progression, key, mode, style, settings, toast])
 
   const loadProgression = useCallback((saved: { key: string; mode: string; style?: string; settings?: Settings; chords: Chord[] }) => {
+    // Tell auto-generation effect to skip so it doesn't overwrite our loaded progression
+    skipProgressionGenerationRef.current = true
     setKey(saved.key)
     setMode(saved.mode)
     if (saved.style) setStyle(saved.style)
@@ -1481,7 +1476,7 @@ export default function ChordGenerator() {
     setExportModalOpen(false)
   }, [progression, settings, key, mode, style, exportLoopCount])
 
-  // Generate initial progression
+  // Generate initial progression or auto-generate when key/mode/style changes
   const isFirstRender = useRef(true)
   useEffect(() => {
     if (!isLoaded) return
@@ -1492,6 +1487,12 @@ export default function ChordGenerator() {
       if (progressionRef.current.length === 0) {
         generateProgression()
       }
+      return
+    }
+
+    // Skip auto-generation when generateAll or loadProgression already set the progression
+    if (skipProgressionGenerationRef.current) {
+      skipProgressionGenerationRef.current = false
       return
     }
 
@@ -1521,33 +1522,51 @@ export default function ChordGenerator() {
     })
   }, [key, mode, style, settings, progression, toast])
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts — use refs so the effect only mounts once and never leaks listeners
+  const stopPlaybackRef = useRef(stopPlayback)
+  const startPlaybackRef = useRef(startPlayback)
+  const generateProgressionRef = useRef(generateProgression)
+  const saveProgressionRef = useRef(saveProgression)
+  const generateAllRef = useRef(generateAll)
+
+  useEffect(() => {
+    stopPlaybackRef.current = stopPlayback
+    startPlaybackRef.current = startPlayback
+    generateProgressionRef.current = generateProgression
+    saveProgressionRef.current = saveProgression
+    generateAllRef.current = generateAll
+  })
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "Space" && (e.target as HTMLElement).tagName !== "INPUT") {
+      if ((e.target as HTMLElement).tagName === "INPUT") return
+      if (e.code === "Space") {
         e.preventDefault()
         if (isPlayingRef.current) {
-          stopPlayback()
+          stopPlaybackRef.current()
         } else {
-          startPlayback()
+          startPlaybackRef.current()
         }
       }
-      if (e.code === "KeyR" && (e.target as HTMLElement).tagName !== "INPUT") {
-        generateProgression()
+      if (e.code === "KeyR") {
+        generateProgressionRef.current()
       }
-      if (e.code === "KeyS" && (e.target as HTMLElement).tagName !== "INPUT") {
-        saveProgression()
+      if (e.code === "KeyS") {
+        saveProgressionRef.current()
       }
-      if (e.code === "KeyK" && (e.target as HTMLElement).tagName !== "INPUT") {
+      if (e.code === "KeyK") {
         setShortcutMode((prev) => !prev)
       }
-      if (e.code === "KeyA" && (e.target as HTMLElement).tagName !== "INPUT") {
-        generateAll()
+      if (e.code === "KeyA") {
+        generateAllRef.current()
       }
     }
 
     document.addEventListener("keydown", handleKeyDown)
-  }, [stopPlayback, startPlayback, generateProgression, saveProgression, generateAll])
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-[var(--base-bg)] text-[var(--text-primary)] font-[family-name:var(--font-display)] selection:bg-[#C0FC14] selection:text-[#0D1117] cyber-grid-bg">
