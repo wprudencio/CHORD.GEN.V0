@@ -1430,7 +1430,7 @@ button { border-radius: 0; transition: all 150ms ease; }
   background-attachment: fixed !important;
 }
 
-/* === Animated perspective grid floor === */
+/* === Perspective grid floor (static) === */
 .mode-vaporwave .cyber-grid-bg::before {
   content: '';
   position: fixed;
@@ -1448,10 +1448,9 @@ button { border-radius: 0; transition: all 150ms ease; }
   transform-origin: center top;
   mask-image: linear-gradient(180deg, transparent 0%, black 18%, black 100%);
   -webkit-mask-image: linear-gradient(180deg, transparent 0%, black 18%, black 100%);
-  animation: vw-grid-scroll 2.2s linear infinite;
 }
 
-/* === Striped retro sun === */
+/* === Striped retro sun (static) === */
 .mode-vaporwave .cyber-grid-bg::after {
   content: '';
   position: fixed;
@@ -1479,7 +1478,6 @@ button { border-radius: 0; transition: all 150ms ease; }
   box-shadow:
     0 0 100px rgba(255, 45, 124, 0.55),
     0 0 200px rgba(255, 139, 61, 0.35);
-  animation: vw-sun-pulse 5s ease-in-out infinite;
 }
 
 /* === Palm + pillar silhouettes behind UI === */
@@ -1502,7 +1500,7 @@ button { border-radius: 0; transition: all 150ms ease; }
   opacity: 0.85;
 }
 
-/* === VHS tracking line === */
+/* === Static VHS scanline overlay === */
 .mode-vaporwave body::after {
   content: '';
   position: fixed;
@@ -1513,23 +1511,6 @@ button { border-radius: 0; transition: all 150ms ease; }
     transparent 0, transparent 2px,
     rgba(255, 45, 124, 0.035) 2px, rgba(255, 45, 124, 0.035) 3px
   );
-  animation: vw-tracking 7s linear infinite;
-}
-
-@keyframes vw-grid-scroll {
-  0% { background-position: 0 0, 0 0; }
-  100% { background-position: 0 0, 0 48px; }
-}
-@keyframes vw-sun-pulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.95; }
-  50% { transform: translate(-50%, -50%) scale(1.03); opacity: 1; }
-}
-@keyframes vw-tracking {
-  0% { transform: translateY(-100%); opacity: 0; }
-  45% { opacity: 0; }
-  48% { opacity: 0.5; }
-  52% { transform: translateY(100vh); opacity: 0; }
-  100% { transform: translateY(100vh); opacity: 0; }
 }
 
 /* Make sure the main app container sits above scenery */
