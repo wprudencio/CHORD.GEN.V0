@@ -1,8 +1,7 @@
 // ============================================================
-// VAPORWAVE SYNTH ENGINE
-// 80s-inspired: DX7-style FM pads, gated reverb drums,
-// LinnDrum-style samples via synthesis, chorused supersaw,
-// VHS degradation via bit-crush + downsampling.
+// VAPORWAVE SYNTH ENGINE — polished 80s sound design
+// DX7-style FM, Juno chorus pads, gated-reverb drums,
+// LinnDrum/808 hybrid drums, tape-wow detune, warm saturation.
 // ============================================================
 
 let _noiseBuffer: AudioBuffer | null = null
@@ -21,11 +20,22 @@ function getNoiseBuffer(ctx: BaseAudioContext, seconds: number = 2): AudioBuffer
 
 export function invalidateNoiseBuffer() { _noiseBuffer = null }
 
-// VHS / lo-fi degradation curve: gentle bit crush + warm tanh
-function makeVhsCurve(bits: number = 12, drive: number = 1.1): Float32Array {
+// Soft tape-style saturation
+function makeTapeCurve(drive = 1.4): Float32Array<ArrayBuffer> {
   const size = 1024
-  const curve = new Float32Array(size)
+  const curve = new Float32Array(size) as Float32Array<ArrayBuffer>
+  for (let i = 0; i < size; i++) {
+    const x = (i - size / 2) / (size / 2)
+    curve[i] = Math.tanh(x * drive)
+  }
+  return curve
+}
+
+// Very gentle bit-crush for that VHS DAC flavor
+function makeVhsCurve(bits = 14, drive = 1.1): Float32Array<ArrayBuffer> {
+  const size = 1024
   const steps = Math.pow(2, bits)
+  const curve = new Float32Array(size) as Float32Array<ArrayBuffer>
   for (let i = 0; i < size; i++) {
     const x = (i - size / 2) / (size / 2)
     const driven = Math.tanh(x * drive)
@@ -34,369 +44,393 @@ function makeVhsCurve(bits: number = 12, drive: number = 1.1): Float32Array {
   return curve
 }
 
+function connectReverb(node: AudioNode, reverbSend: AudioNode | null, amount: number) {
+  if (reverbSend && amount > 0.001) {
+    const sendGain = node.context.createGain()
+    sendGain.gain.value = amount
+    node.connect(sendGain).connect(reverbSend)
+  }
+}
+
 // ============================================================
-// VAPORWAVE DRUMS — LinnDrum + gated reverb
+// DRUMS
 // ============================================================
 
-// --- KICK: tight LinnDrum-style (punchy 808-meets-LM-1)
 export function playKickVw(ctx: BaseAudioContext, dest: AudioNode, time: number, vol: number, reverbSend: AudioNode, revAmount: number) {
   if (vol < 0.001) return
   const t = time
-  // Click (very short, like a LinnDrum sample attack)
+  // Click
   const click = ctx.createOscillator()
   click.type = "sine"
   click.frequency.setValueAtTime(900, t)
-  click.frequency.exponentialRampToValueAtTime(200, t + 0.005)
+  click.frequency.exponentialRampToValueAtTime(180, t + 0.006)
   const clickG = ctx.createGain()
-  clickG.gain.setValueAtTime(vol * 0.7, t)
-  clickG.gain.exponentialRampToValueAtTime(0.001, t + 0.02)
+  clickG.gain.setValueAtTime(vol * 0.6, t)
+  clickG.gain.exponentialRampToValueAtTime(0.001, t + 0.025)
   click.connect(clickG).connect(dest)
-  if (reverbSend) clickG.connect(reverbSend)
+  connectReverb(clickG, reverbSend, revAmount * 0.2)
   // Body
   const body = ctx.createOscillator()
   body.type = "sine"
-  body.frequency.setValueAtTime(110, t)
-  body.frequency.exponentialRampToValueAtTime(45, t + 0.12)
+  body.frequency.setValueAtTime(130, t)
+  body.frequency.exponentialRampToValueAtTime(42, t + 0.14)
   const bodyG = ctx.createGain()
-  bodyG.gain.setValueAtTime(vol * 0.95, t)
-  bodyG.gain.exponentialRampToValueAtTime(0.001, t + 0.4)
+  bodyG.gain.setValueAtTime(0, t)
+  bodyG.gain.linearRampToValueAtTime(vol * 0.95, t + 0.008)
+  bodyG.gain.exponentialRampToValueAtTime(0.001, t + 0.42)
   body.connect(bodyG).connect(dest)
-  if (reverbSend) bodyG.connect(reverbSend)
-  click.start(t); click.stop(t + 0.03)
-  body.start(t); body.stop(t + 0.45)
+  connectReverb(bodyG, reverbSend, revAmount * 0.35)
+  click.start(t); click.stop(t + 0.04)
+  body.start(t); body.stop(t + 0.5)
 }
 
-// --- SNARE: gated reverb style (the classic 80s production trick)
 export function playSnareVw(ctx: BaseAudioContext, dest: AudioNode, time: number, vol: number, reverbSend: AudioNode, revAmount: number) {
   if (vol < 0.001) return
   const t = time
-  // Noise body (filtered)
+  const gateTime = 0.13
+  // Noise body — bandpassed for that 80s snap
   const noise = ctx.createBufferSource()
   noise.buffer = getNoiseBuffer(ctx, 0.5)
   const hp = ctx.createBiquadFilter()
   hp.type = "highpass"
-  hp.frequency.value = 1500
-  const lp = ctx.createBiquadFilter()
-  lp.type = "lowpass"
-  lp.frequency.value = 8000
-  // The "gate" — hard envelope that cuts off at ~0.18s, no natural decay
+  hp.frequency.value = 900
+  const bp = ctx.createBiquadFilter()
+  bp.type = "bandpass"
+  bp.frequency.value = 2200
+  bp.Q.value = 1.2
   const bodyG = ctx.createGain()
   bodyG.gain.setValueAtTime(0, t)
-  bodyG.gain.linearRampToValueAtTime(vol * 0.85, t + 0.002)
-  bodyG.gain.setValueAtTime(vol * 0.85, t + 0.16)
-  // Hard gate: cut to silence at exactly 0.18s (the gated reverb signature)
-  bodyG.gain.setValueAtTime(0.001, t + 0.18)
-  noise.connect(hp).connect(lp).connect(bodyG).connect(dest)
-  if (reverbSend) bodyG.connect(reverbSend)
+  bodyG.gain.linearRampToValueAtTime(vol * 0.9, t + 0.003)
+  bodyG.gain.setValueAtTime(vol * 0.9, t + gateTime - 0.005)
+  bodyG.gain.setValueAtTime(0.001, t + gateTime)
+  noise.connect(hp).connect(bp).connect(bodyG).connect(dest)
+  // Lots of reverb send pre-gate gives the classic gated-reverb wash
+  connectReverb(bodyG, reverbSend, revAmount * 1.3)
   // Tonal snap
   const tone = ctx.createOscillator()
   tone.type = "triangle"
-  tone.frequency.setValueAtTime(220, t)
-  tone.frequency.exponentialRampToValueAtTime(180, t + 0.04)
+  tone.frequency.setValueAtTime(250, t)
+  tone.frequency.exponentialRampToValueAtTime(180, t + 0.05)
   const toneG = ctx.createGain()
-  toneG.gain.setValueAtTime(vol * 0.5, t)
+  toneG.gain.setValueAtTime(vol * 0.55, t)
   toneG.gain.exponentialRampToValueAtTime(0.001, t + 0.08)
   tone.connect(toneG).connect(dest)
-  if (reverbSend) toneG.connect(reverbSend)
-  noise.start(t); noise.stop(t + 0.2)
-  tone.start(t); tone.stop(t + 0.1)
+  connectReverb(toneG, reverbSend, revAmount * 0.5)
+  noise.start(t); noise.stop(t + gateTime + 0.02)
+  tone.start(t); tone.stop(t + 0.12)
 }
 
-// --- HIHAT: LinnDrum-style (metallic, gated)
 export function playHiHatVw(ctx: BaseAudioContext, dest: AudioNode, time: number, vol: number, reverbSend: AudioNode, revAmount: number, open: boolean = false) {
   if (vol < 0.001) return
   const t = time
-  // Use multiple square waves at high freqs for metallic timbre
-  const freqs = [4000, 5000, 6000, 8000]
-  const dur = open ? 0.25 : 0.04
+  const dur = open ? 0.22 : 0.035
+  // Metallic square stack
+  const freqs = [3500, 4700, 6000, 7800]
   const master = ctx.createGain()
   master.gain.setValueAtTime(0, t)
-  master.gain.linearRampToValueAtTime(vol * (open ? 0.35 : 0.55), t + 0.001)
-  // Gated cutoff (no exponential decay — hard cut for LinnDrum snap)
-  master.gain.setValueAtTime(vol * (open ? 0.35 : 0.55), t + dur * 0.85)
+  master.gain.linearRampToValueAtTime(vol * (open ? 0.35 : 0.5), t + 0.001)
+  master.gain.setValueAtTime(vol * (open ? 0.35 : 0.5), t + dur * 0.8)
   master.gain.setValueAtTime(0.001, t + dur)
   master.connect(dest)
-  if (reverbSend) master.connect(reverbSend)
+  connectReverb(master, reverbSend, revAmount * 0.25)
   freqs.forEach(f => {
     const o = ctx.createOscillator()
     o.type = "square"
     o.frequency.value = f
     const g = ctx.createGain()
-    g.gain.value = 0.2
+    g.gain.value = 0.18
     o.connect(g).connect(master)
     o.start(t); o.stop(t + dur + 0.02)
   })
+  // Add a little noise sizzle
+  const noise = ctx.createBufferSource()
+  noise.buffer = getNoiseBuffer(ctx, 0.3)
+  const lp = ctx.createBiquadFilter()
+  lp.type = "lowpass"
+  lp.frequency.value = 12000
+  const nG = ctx.createGain()
+  nG.gain.setValueAtTime(vol * 0.2, t)
+  nG.gain.exponentialRampToValueAtTime(0.001, t + dur)
+  noise.connect(lp).connect(nG).connect(dest)
+  connectReverb(nG, reverbSend, revAmount * 0.15)
+  noise.start(t); noise.stop(t + dur + 0.01)
 }
 
-// --- CLAP: 80s-style handclap (multiple short bursts)
 export function playClapVw(ctx: BaseAudioContext, dest: AudioNode, time: number, vol: number, reverbSend: AudioNode, revAmount: number) {
   if (vol < 0.001) return
   const t = time
-  const offsets = [0, 0.01, 0.022, 0.035]
+  const offsets = [0, 0.011, 0.024, 0.038]
   offsets.forEach((off, i) => {
     const noise = ctx.createBufferSource()
     noise.buffer = getNoiseBuffer(ctx, 0.2)
     const bp = ctx.createBiquadFilter()
     bp.type = "bandpass"
-    bp.frequency.value = 1300
-    bp.Q.value = 1.5
+    bp.frequency.value = 1400
+    bp.Q.value = 1.4
     const g = ctx.createGain()
-    const peak = vol * (i === offsets.length - 1 ? 0.8 : 0.45)
+    const peak = vol * (i === offsets.length - 1 ? 0.85 : 0.42)
     g.gain.setValueAtTime(0.001, t + off)
     g.gain.linearRampToValueAtTime(peak, t + off + 0.001)
-    g.gain.exponentialRampToValueAtTime(0.001, t + off + 0.12)
+    g.gain.exponentialRampToValueAtTime(0.001, t + off + 0.13)
     noise.connect(bp).connect(g).connect(dest)
-    if (reverbSend) g.connect(reverbSend)
+    connectReverb(g, reverbSend, revAmount * 0.35)
     noise.start(t + off)
-    noise.stop(t + off + 0.15)
+    noise.stop(t + off + 0.16)
   })
 }
 
-// --- RIM: 80s rim shot (short tonal click)
 export function playRimVw(ctx: BaseAudioContext, dest: AudioNode, time: number, vol: number, reverbSend: AudioNode, revAmount: number) {
   if (vol < 0.001) return
   const t = time
   const o1 = ctx.createOscillator()
   o1.type = "sine"
-  o1.frequency.value = 820
+  o1.frequency.value = 850
   const o2 = ctx.createOscillator()
-  o2.type = "sine"
+  o2.type = "triangle"
   o2.frequency.value = 1700
   const g = ctx.createGain()
-  g.gain.setValueAtTime(vol * 0.6, t)
-  g.gain.exponentialRampToValueAtTime(0.001, t + 0.05)
+  g.gain.setValueAtTime(vol * 0.55, t)
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.045)
   o1.connect(g); o2.connect(g)
   g.connect(dest)
-  if (reverbSend) g.connect(reverbSend)
+  connectReverb(g, reverbSend, revAmount * 0.2)
   o1.start(t); o1.stop(t + 0.06)
   o2.start(t); o2.stop(t + 0.06)
 }
 
 // ============================================================
-// VAPORWAVE SYNTHS — 8 synth types
-// DX7 pads, chorused leads, 80s brass, plucked DX bells, etc.
+// SYNTHS
 // ============================================================
 
-// 1) DX7 PAD — 4-op FM pad with slow attack, lush chorus via detuning
+type VoiceFn = (ctx: BaseAudioContext, dest: AudioNode, time: number, freq: number, dur: number, vol: number, reverbSend: AudioNode, revAmount: number) => void
+
+function adsrEnv(g: GainNode, t: number, a: number, d: number, s: number, r: number, peak: number, sustainLvl = peak * s) {
+  g.gain.setValueAtTime(0, t)
+  g.gain.linearRampToValueAtTime(peak, t + a)
+  g.gain.linearRampToValueAtTime(sustainLvl, t + a + d)
+  g.gain.setValueAtTime(sustainLvl, t + a + d + Math.max(0, r - 0.02))
+  g.gain.exponentialRampToValueAtTime(0.001, t + a + d + r)
+}
+
+function makeVibrato(ctx: BaseAudioContext, freq: number, depth: number, start: number, stop: number): [OscillatorNode, GainNode] {
+  const lfo = ctx.createOscillator()
+  lfo.frequency.value = freq
+  const lfoG = ctx.createGain()
+  lfoG.gain.value = depth
+  lfo.connect(lfoG)
+  lfo.start(start)
+  lfo.stop(stop)
+  return [lfo, lfoG]
+}
+
+// 1) DX7 PAD — 4-op FM pad, slow attack, lush detuning
 function playDx7Pad(ctx: BaseAudioContext, dest: AudioNode, time: number, freq: number, dur: number, vol: number, reverbSend: AudioNode, revAmount: number) {
   if (vol < 0.001) return
   const t = time
-  // 2 carriers + 2 modulators per voice, 2 voices detuned for chorus
+  const end = t + dur + 0.1
   const voices = [
-    { detune: -7, volScale: 1.0 },
-    { detune: 7, volScale: 0.9 },
+    { detune: -10, mod1Index: 0.45, mod2Index: 0.2 },
+    { detune: 10, mod1Index: 0.4, mod2Index: 0.18 },
   ]
-  const crusher = ctx.createWaveShaper()
-  crusher.curve = makeVhsCurve(14, 1.05)
+  const tape = ctx.createWaveShaper()
+  tape.curve = makeTapeCurve(1.2)
   const amp = ctx.createGain()
-  amp.gain.setValueAtTime(0, t)
-  amp.gain.linearRampToValueAtTime(vol * 0.4, t + 0.4)
-  amp.gain.setValueAtTime(vol * 0.4, t + dur * 0.7)
-  amp.gain.exponentialRampToValueAtTime(0.001, t + dur)
-  crusher.connect(amp).connect(dest)
-  if (reverbSend) amp.connect(reverbSend)
+  adsrEnv(amp, t, 0.35, 0.25, 0.75, dur * 0.8, vol * 0.35)
+  tape.connect(amp).connect(dest)
+  connectReverb(amp, reverbSend, revAmount * 0.7)
   voices.forEach(v => {
     const carrier = ctx.createOscillator()
     carrier.type = "sine"
     carrier.frequency.value = freq
     carrier.detune.value = v.detune
-    // Modulator 1: ratio 2, low index → bell-like harmonic
     const mod1 = ctx.createOscillator()
     mod1.type = "sine"
     mod1.frequency.value = freq * 2
     const mod1G = ctx.createGain()
-    mod1G.gain.setValueAtTime(freq * 0.4 * v.volScale, t)
-    mod1G.gain.exponentialRampToValueAtTime(0.01, t + dur * 0.6)
+    mod1G.gain.setValueAtTime(freq * v.mod1Index, t)
+    mod1G.gain.exponentialRampToValueAtTime(freq * 0.02, t + dur * 0.6)
     mod1.connect(mod1G).connect(carrier.frequency)
-    // Modulator 2: ratio 1, even lower index → warmth
     const mod2 = ctx.createOscillator()
     mod2.type = "sine"
-    mod2.frequency.value = freq
+    mod2.frequency.value = freq * 1
     const mod2G = ctx.createGain()
-    mod2G.gain.setValueAtTime(freq * 0.2 * v.volScale, t)
-    mod2G.gain.exponentialRampToValueAtTime(0.01, t + dur * 0.6)
+    mod2G.gain.setValueAtTime(freq * v.mod2Index, t)
+    mod2G.gain.exponentialRampToValueAtTime(freq * 0.01, t + dur * 0.7)
     mod2.connect(mod2G).connect(carrier.frequency)
-    carrier.connect(crusher)
-    carrier.start(t); carrier.stop(t + dur + 0.05)
-    mod1.start(t); mod1.stop(t + dur + 0.05)
-    mod2.start(t); mod2.stop(t + dur + 0.05)
+    carrier.connect(tape)
+    carrier.start(t); carrier.stop(end)
+    mod1.start(t); mod1.stop(end)
+    mod2.start(t); mod2.stop(end)
   })
 }
 
-// 2) CHORUS LEAD — detuned sawtooth with vibrato (80s solo synth)
-function playChorusLead(ctx: BaseAudioContext, dest: AudioNode, time: number, freq: number, dur: number, vol: number, reverbSend: AudioNode, revAmount: number) {
+// 2) JUNO PAD — warm chorus pad
+function playJunoPad(ctx: BaseAudioContext, dest: AudioNode, time: number, freq: number, dur: number, vol: number, reverbSend: AudioNode, revAmount: number) {
   if (vol < 0.001) return
   const t = time
-  // 3 detuned saw voices for thick chorus
-  const detunes = [-9, 0, 9]
+  const end = t + dur + 0.1
+  const amp = ctx.createGain()
+  adsrEnv(amp, t, 0.45, 0.3, 0.8, dur * 0.7, vol * 0.32)
   const f = ctx.createBiquadFilter()
   f.type = "lowpass"
-  f.frequency.setValueAtTime(freq * 6, t)
-  f.frequency.exponentialRampToValueAtTime(freq * 2, t + dur * 0.5)
-  f.Q.value = 2
-  // Vibrato
-  const lfo = ctx.createOscillator()
-  lfo.frequency.value = 5
-  const lfoG = ctx.createGain()
-  lfoG.gain.value = freq * 0.012
-  const crusher = ctx.createWaveShaper()
-  crusher.curve = makeVhsCurve(13, 1.1)
+  f.frequency.setValueAtTime(freq * 10, t)
+  f.frequency.exponentialRampToValueAtTime(freq * 2.2, t + dur * 0.5)
+  f.Q.value = 1.2
+  const [vib, vibG] = makeVibrato(ctx, 4.5, freq * 0.008, t, end)
+  f.connect(amp).connect(dest)
+  connectReverb(amp, reverbSend, revAmount * 0.65)
+  const detunes = [-14, -7, 0, 7, 14]
+  const waves = ["sawtooth", "sawtooth", "pulse", "sawtooth", "sawtooth"]
+  detunes.forEach((d, i) => {
+    const o = ctx.createOscillator()
+    o.type = waves[i] as OscillatorType
+    o.frequency.value = freq
+    o.detune.value = d
+    if (waves[i] === "pulse") {
+      // Web Audio doesn't have pulse; use square with sub octave
+      o.type = "square"
+      o.frequency.value = freq * 0.5
+    }
+    o.connect(f)
+    vibG.connect(o.detune)
+    o.start(t); o.stop(end)
+  })
+}
+
+// 3) DX BELL — bright FM bell
+function playDxBell(ctx: BaseAudioContext, dest: AudioNode, time: number, freq: number, dur: number, vol: number, reverbSend: AudioNode, revAmount: number) {
+  if (vol < 0.001) return
+  const t = time
+  const end = t + dur + 0.05
+  const carrier = ctx.createOscillator()
+  carrier.type = "sine"
+  carrier.frequency.value = freq
+  const mod1 = ctx.createOscillator()
+  mod1.type = "sine"
+  mod1.frequency.value = freq * 14
+  const mod1G = ctx.createGain()
+  mod1G.gain.setValueAtTime(freq * 1.6, t)
+  mod1G.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.45)
+  mod1.connect(mod1G).connect(carrier.frequency)
+  const mod2 = ctx.createOscillator()
+  mod2.type = "sine"
+  mod2.frequency.value = freq * 1
+  const mod2G = ctx.createGain()
+  mod2G.gain.setValueAtTime(freq * 0.5, t)
+  mod2G.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.65)
+  mod2.connect(mod2G).connect(carrier.frequency)
   const amp = ctx.createGain()
   amp.gain.setValueAtTime(0, t)
-  amp.gain.linearRampToValueAtTime(vol * 0.45, t + 0.04)
-  amp.gain.setValueAtTime(vol * 0.45, t + dur * 0.6)
+  amp.gain.linearRampToValueAtTime(vol * 0.5, t + 0.002)
+  amp.gain.setValueAtTime(vol * 0.5, t + dur * 0.35)
   amp.gain.exponentialRampToValueAtTime(0.001, t + dur)
-  crusher.connect(amp).connect(dest)
-  if (reverbSend) amp.connect(reverbSend)
+  carrier.connect(amp).connect(dest)
+  connectReverb(amp, reverbSend, revAmount * 0.75)
+  carrier.start(t); carrier.stop(end)
+  mod1.start(t); mod1.stop(end)
+  mod2.start(t); mod2.stop(end)
+}
+
+// 4) BRASS STAB — punchy 80s brass
+function playBrassStab(ctx: BaseAudioContext, dest: AudioNode, time: number, freq: number, dur: number, vol: number, reverbSend: AudioNode, revAmount: number) {
+  if (vol < 0.001) return
+  const t = time
+  const end = t + dur + 0.05
+  const amp = ctx.createGain()
+  amp.gain.setValueAtTime(0, t)
+  amp.gain.linearRampToValueAtTime(vol * 0.55, t + 0.025)
+  amp.gain.setValueAtTime(vol * 0.55, t + dur * 0.55)
+  amp.gain.exponentialRampToValueAtTime(0.001, t + dur)
+  const f = ctx.createBiquadFilter()
+  f.type = "lowpass"
+  f.frequency.setValueAtTime(freq * 5, t)
+  f.frequency.exponentialRampToValueAtTime(freq * 1.3, t + dur * 0.6)
+  f.Q.value = 4
+  f.connect(amp).connect(dest)
+  connectReverb(amp, reverbSend, revAmount * 0.55)
+  const detunes = [-8, 0, 8]
   detunes.forEach(d => {
     const o = ctx.createOscillator()
     o.type = "sawtooth"
     o.frequency.value = freq
     o.detune.value = d
-    o.connect(lfoG)
     o.connect(f)
-    o.start(t); o.stop(t + dur + 0.05)
+    o.start(t); o.stop(end)
   })
-  lfo.start(t); lfo.stop(t + dur + 0.05)
-  // Also add vibrato to lfo's main signal — connect lfo to a master freq offset
-  lfo.connect(lfoG)
-  lfoG.connect(f.detune) // subtle wobble on the filter
 }
 
-// 3) DX BELL — 4-op FM bell (E.PIANO style)
-function playDxBell(ctx: BaseAudioContext, dest: AudioNode, time: number, freq: number, dur: number, vol: number, reverbSend: AudioNode, revAmount: number) {
-  if (vol < 0.001) return
-  const t = time
-  const carrier = ctx.createOscillator()
-  carrier.type = "sine"
-  carrier.frequency.value = freq
-  // Two modulators stacked
-  const mod1 = ctx.createOscillator()
-  mod1.type = "sine"
-  mod1.frequency.value = freq * 14
-  const mod1G = ctx.createGain()
-  mod1G.gain.setValueAtTime(freq * 1.2, t)
-  mod1G.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.5)
-  mod1.connect(mod1G).connect(carrier.frequency)
-  const mod2 = ctx.createOscillator()
-  mod2.type = "sine"
-  mod2.frequency.value = freq
-  const mod2G = ctx.createGain()
-  mod2G.gain.setValueAtTime(freq * 0.8, t)
-  mod2G.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.7)
-  mod2.connect(mod2G).connect(carrier.frequency)
-  const crusher = ctx.createWaveShaper()
-  crusher.curve = makeVhsCurve(14, 1.05)
-  const amp = ctx.createGain()
-  amp.gain.setValueAtTime(0, t)
-  amp.gain.linearRampToValueAtTime(vol * 0.55, t + 0.002)
-  amp.gain.setValueAtTime(vol * 0.55, t + dur * 0.4)
-  amp.gain.exponentialRampToValueAtTime(0.001, t + dur)
-  carrier.connect(crusher).connect(amp).connect(dest)
-  if (reverbSend) amp.connect(reverbSend)
-  carrier.start(t); carrier.stop(t + dur + 0.05)
-  mod1.start(t); mod1.stop(t + dur + 0.05)
-  mod2.start(t); mod2.stop(t + dur + 0.05)
-}
-
-// 4) BRASS STAB — punchy 80s brass hit (sax-section stab)
-function playBrassStab(ctx: BaseAudioContext, dest: AudioNode, time: number, freq: number, dur: number, vol: number, reverbSend: AudioNode, revAmount: number) {
-  if (vol < 0.001) return
-  const t = time
-  // Square root of 2-ish wave via detuned saws + filter
-  const o1 = ctx.createOscillator()
-  o1.type = "sawtooth"
-  o1.frequency.value = freq
-  o1.detune.value = -5
-  const o2 = ctx.createOscillator()
-  o2.type = "sawtooth"
-  o2.frequency.value = freq
-  o2.detune.value = 5
-  const f = ctx.createBiquadFilter()
-  f.type = "lowpass"
-  f.frequency.setValueAtTime(freq * 3, t)
-  f.frequency.exponentialRampToValueAtTime(freq * 1.2, t + dur * 0.7)
-  f.Q.value = 5
-  const amp = ctx.createGain()
-  amp.gain.setValueAtTime(0, t)
-  amp.gain.linearRampToValueAtTime(vol * 0.55, t + 0.02)
-  amp.gain.setValueAtTime(vol * 0.55, t + dur * 0.5)
-  amp.gain.exponentialRampToValueAtTime(0.001, t + dur)
-  o1.connect(f); o2.connect(f)
-  f.connect(amp).connect(dest)
-  if (reverbSend) amp.connect(reverbSend)
-  o1.start(t); o1.stop(t + dur + 0.05)
-  o2.start(t); o2.stop(t + dur + 0.05)
-}
-
-// 5) PLUCKED DX — short FM pluck (Rhodes-like)
+// 5) DX PLUCK — short Rhodes-like pluck
 function playDxPluck(ctx: BaseAudioContext, dest: AudioNode, time: number, freq: number, dur: number, vol: number, reverbSend: AudioNode, revAmount: number) {
   if (vol < 0.001) return
   const t = time
+  const end = t + dur + 0.05
   const carrier = ctx.createOscillator()
   carrier.type = "sine"
   carrier.frequency.value = freq
   const mod = ctx.createOscillator()
   mod.type = "sine"
-  mod.frequency.value = freq * 3
+  mod.frequency.value = freq * 3.5
   const modG = ctx.createGain()
-  modG.gain.setValueAtTime(freq * 0.7, t)
-  modG.gain.exponentialRampToValueAtTime(0.001, t + 0.15)
+  modG.gain.setValueAtTime(freq * 0.9, t)
+  modG.gain.exponentialRampToValueAtTime(0.001, t + 0.18)
   mod.connect(modG).connect(carrier.frequency)
-  const crusher = ctx.createWaveShaper()
-  crusher.curve = makeVhsCurve(14, 1.05)
+  const tape = ctx.createWaveShaper()
+  tape.curve = makeTapeCurve(1.3)
   const amp = ctx.createGain()
   amp.gain.setValueAtTime(0, t)
-  amp.gain.linearRampToValueAtTime(vol * 0.6, t + 0.002)
-  amp.gain.exponentialRampToValueAtTime(0.001, t + dur)
-  carrier.connect(crusher).connect(amp).connect(dest)
-  if (reverbSend) amp.connect(reverbSend)
-  carrier.start(t); carrier.stop(t + dur + 0.05)
-  mod.start(t); mod.stop(t + dur + 0.05)
+  amp.gain.linearRampToValueAtTime(vol * 0.6, t + 0.003)
+  amp.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.9)
+  carrier.connect(tape).connect(amp).connect(dest)
+  connectReverb(amp, reverbSend, revAmount * 0.45)
+  carrier.start(t); carrier.stop(end)
+  mod.start(t); mod.stop(end)
 }
 
-// 6) VHS KEYS — electric piano with VHS degradation
-function playVhsKeys(ctx: BaseAudioContext, dest: AudioNode, time: number, freq: number, dur: number, vol: number, reverbSend: AudioNode, revAmount: number) {
+// 6) E.PIANO — DX7 E.PIANO 1 style
+function playElecPiano(ctx: BaseAudioContext, dest: AudioNode, time: number, freq: number, dur: number, vol: number, reverbSend: AudioNode, revAmount: number) {
   if (vol < 0.001) return
   const t = time
-  // Rhodes-like: sine carrier + low-ratio modulator, slight detune
-  const o1 = ctx.createOscillator()
-  o1.type = "sine"
-  o1.frequency.value = freq
-  o1.detune.value = -4
-  const o2 = ctx.createOscillator()
-  o2.type = "sine"
-  o2.frequency.value = freq
-  o2.detune.value = 4
-  // Tine mod
+  const end = t + dur + 0.05
+  const amp = ctx.createGain()
+  amp.gain.setValueAtTime(0, t)
+  amp.gain.linearRampToValueAtTime(vol * 0.5, t + 0.004)
+  amp.gain.setValueAtTime(vol * 0.5, t + dur * 0.5)
+  amp.gain.exponentialRampToValueAtTime(0.001, t + dur)
+  const f = ctx.createBiquadFilter()
+  f.type = "lowpass"
+  f.frequency.value = freq * 8
+  f.Q.value = 0.8
+  f.connect(amp).connect(dest)
+  connectReverb(amp, reverbSend, revAmount * 0.55)
+  // Two carriers with shared modulator (ratio 14 gives the tine bite)
   const mod = ctx.createOscillator()
   mod.type = "sine"
-  mod.frequency.value = freq * 7
+  mod.frequency.value = freq * 14
   const modG = ctx.createGain()
-  modG.gain.setValueAtTime(freq * 0.25, t)
-  modG.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.4)
-  mod.connect(modG).connect(o1.frequency)
-  mod.connect(modG).connect(o2.frequency)
-  // Heavy VHS
-  const crusher = ctx.createWaveShaper()
-  crusher.curve = makeVhsCurve(10, 1.2)
-  const amp = ctx.createGain()
-  amp.gain.setValueAtTime(0, t)
-  amp.gain.linearRampToValueAtTime(vol * 0.5, t + 0.005)
-  amp.gain.setValueAtTime(vol * 0.5, t + dur * 0.6)
-  amp.gain.exponentialRampToValueAtTime(0.001, t + dur)
-  o1.connect(crusher); o2.connect(crusher)
-  crusher.connect(amp).connect(dest)
-  if (reverbSend) amp.connect(reverbSend)
-  o1.start(t); o1.stop(t + dur + 0.05)
-  o2.start(t); o2.stop(t + dur + 0.05)
-  mod.start(t); mod.stop(t + dur + 0.05)
+  modG.gain.setValueAtTime(freq * 1.1, t)
+  modG.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.35)
+  const car1 = ctx.createOscillator()
+  car1.type = "sine"
+  car1.frequency.value = freq
+  car1.detune.value = -4
+  const car2 = ctx.createOscillator()
+  car2.type = "sine"
+  car2.frequency.value = freq
+  car2.detune.value = 5
+  mod.connect(modG)
+  modG.connect(car1.frequency)
+  modG.connect(car2.frequency)
+  car1.connect(f); car2.connect(f)
+  car1.start(t); car1.stop(end)
+  car2.start(t); car2.stop(end)
+  mod.start(t); mod.stop(end)
 }
 
-// 7) SYNTH BASS — punchy 80s synth bass (saw + sub)
-function playSynthBass(ctx: BaseAudioContext, dest: AudioNode, time: number, freq: number, dur: number, vol: number, reverbSend: AudioNode, revAmount: number) {
+// 7) SLAP BASS — punchy 80s synth bass
+function playSlapBass(ctx: BaseAudioContext, dest: AudioNode, time: number, freq: number, dur: number, vol: number, reverbSend: AudioNode, revAmount: number) {
   if (vol < 0.001) return
   const t = time
+  const end = t + dur + 0.05
   const saw = ctx.createOscillator()
   saw.type = "sawtooth"
   saw.frequency.value = freq
@@ -405,67 +439,59 @@ function playSynthBass(ctx: BaseAudioContext, dest: AudioNode, time: number, fre
   sub.frequency.value = freq
   const f = ctx.createBiquadFilter()
   f.type = "lowpass"
-  f.frequency.setValueAtTime(freq * 6, t)
-  f.frequency.exponentialRampToValueAtTime(freq * 1.5, t + dur * 0.4)
-  f.Q.value = 4
-  const sawG = ctx.createGain()
-  sawG.gain.value = 0.5
-  const subG = ctx.createGain()
-  subG.gain.value = 0.7
+  f.frequency.setValueAtTime(freq * 8, t)
+  f.frequency.exponentialRampToValueAtTime(freq * 2.2, t + 0.12)
+  f.Q.value = 3.5
   const amp = ctx.createGain()
   amp.gain.setValueAtTime(0, t)
-  amp.gain.linearRampToValueAtTime(vol * 0.65, t + 0.01)
-  amp.gain.setValueAtTime(vol * 0.65, t + dur * 0.7)
+  amp.gain.linearRampToValueAtTime(vol * 0.7, t + 0.01)
+  amp.gain.setValueAtTime(vol * 0.7, t + dur * 0.75)
   amp.gain.exponentialRampToValueAtTime(0.001, t + dur)
-  saw.connect(sawG).connect(f)
-  sub.connect(subG).connect(f)
+  saw.connect(f); sub.connect(f)
   f.connect(amp).connect(dest)
-  if (reverbSend) amp.connect(reverbSend)
-  saw.start(t); saw.stop(t + dur + 0.05)
-  sub.start(t); sub.stop(t + dur + 0.05)
+  connectReverb(amp, reverbSend, revAmount * 0.15)
+  saw.start(t); saw.stop(end)
+  sub.start(t); sub.stop(end)
 }
 
-// 8) STRINGS — slow-attack saw strings (1980s string machine)
+// 8) STRINGS — 80s string machine
 function playStrings(ctx: BaseAudioContext, dest: AudioNode, time: number, freq: number, dur: number, vol: number, reverbSend: AudioNode, revAmount: number) {
   if (vol < 0.001) return
   const t = time
-  // 3 detuned saws
-  const detunes = [-12, 0, 12]
+  const end = t + dur + 0.1
+  const amp = ctx.createGain()
+  adsrEnv(amp, t, 0.55, 0.35, 0.8, dur * 0.7, vol * 0.32)
   const f = ctx.createBiquadFilter()
   f.type = "lowpass"
-  f.frequency.setValueAtTime(freq * 4, t)
-  f.frequency.exponentialRampToValueAtTime(freq * 1.8, t + dur * 0.5)
-  f.Q.value = 1
-  const crusher = ctx.createWaveShaper()
-  crusher.curve = makeVhsCurve(13, 1.1)
-  const amp = ctx.createGain()
-  amp.gain.setValueAtTime(0, t)
-  amp.gain.linearRampToValueAtTime(vol * 0.4, t + 0.15)
-  amp.gain.setValueAtTime(vol * 0.4, t + dur * 0.6)
-  amp.gain.exponentialRampToValueAtTime(0.001, t + dur)
-  f.connect(crusher).connect(amp).connect(dest)
-  if (reverbSend) amp.connect(reverbSend)
+  f.frequency.setValueAtTime(freq * 3.5, t)
+  f.frequency.exponentialRampToValueAtTime(freq * 1.6, t + dur * 0.5)
+  f.Q.value = 0.6
+  const [vib, vibG] = makeVibrato(ctx, 5, freq * 0.006, t, end)
+  f.connect(amp).connect(dest)
+  connectReverb(amp, reverbSend, revAmount * 0.7)
+  const detunes = [-16, -8, 0, 8, 16]
   detunes.forEach(d => {
     const o = ctx.createOscillator()
     o.type = "sawtooth"
     o.frequency.value = freq
     o.detune.value = d
     o.connect(f)
-    o.start(t); o.stop(t + dur + 0.05)
+    vibG.connect(o.detune)
+    o.start(t); o.stop(end)
   })
 }
 
 export type SynthVwType =
   | "dx7pad" | "chorusLead" | "dxBell" | "brassStab" | "dxPluck" | "vhsKeys" | "synthBass" | "strings"
 
-const SYNTH_VW_MAP: Record<SynthVwType, (ctx: BaseAudioContext, dest: AudioNode, time: number, freq: number, dur: number, vol: number, reverbSend: AudioNode, revAmount: number) => void> = {
+const SYNTH_VW_MAP: Record<SynthVwType, VoiceFn> = {
   dx7pad: playDx7Pad,
-  chorusLead: playChorusLead,
+  chorusLead: playJunoPad,
   dxBell: playDxBell,
   brassStab: playBrassStab,
   dxPluck: playDxPluck,
-  vhsKeys: playVhsKeys,
-  synthBass: playSynthBass,
+  vhsKeys: playElecPiano,
+  synthBass: playSlapBass,
   strings: playStrings,
 }
 

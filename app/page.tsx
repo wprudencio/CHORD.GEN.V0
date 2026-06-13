@@ -1824,27 +1824,54 @@ export default function ChordGenerator() {
             {/* Vaporwave card */}
             <button
               onClick={() => chooseMode("vw")}
-              className="chooser-card group"
+              className="chooser-card mode-vw-override group"
               data-testid="mode-vw"
-              style={{
-                background: "linear-gradient(135deg, #1A0033 0%, #3D1466 50%, #FF6B9D 100%)",
-                color: "#FFE5F1",
-                border: "2px solid #FF6B9D",
-                boxShadow: "0 0 24px rgba(255, 107, 157, 0.4), inset 0 0 24px rgba(184, 41, 255, 0.2)",
-              }}
             >
-              <div className="chooser-thumb" style={{ background: "linear-gradient(180deg, #1A0033 0%, #3D1466 30%, #FF6B9D 60%, #FF8B3D 80%, #FFE15A 100%)", borderBottom: "1px solid #FF6B9D", position: "relative", overflow: "hidden" }}>
-                <div style={{ position: "absolute", left: "50%", top: "55%", transform: "translate(-50%, -50%)", width: "100px", height: "100px", borderRadius: "50%", background: "radial-gradient(circle, #FFE15A 0%, #FF8B3D 50%, #FF6B9D 100%)", boxShadow: "0 0 30px rgba(255, 107, 157, 0.6)" }} />
-                <div style={{ position: "absolute", left: "50%", top: "55%", transform: "translate(-50%, -50%)", width: "100px", height: "100px", borderRadius: "50%", backgroundImage: "repeating-linear-gradient(180deg, transparent 0px, transparent 3px, #1A0033 3px, #1A0033 4px)", backgroundSize: "100% 8px", backgroundPosition: "center 60%" }} />
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "30%", backgroundImage: "linear-gradient(90deg, transparent 49%, rgba(0, 255, 255, 0.6) 49%, rgba(0, 255, 255, 0.6) 51%, transparent 51%), linear-gradient(0deg, transparent 49%, rgba(255, 107, 157, 0.6) 49%, rgba(255, 107, 157, 0.6) 51%, transparent 51%)", backgroundSize: "12px 100%, 100% 8px", transform: "perspective(200px) rotateX(50deg)", transformOrigin: "bottom" }} />
+              <div className="chooser-thumb relative overflow-hidden">
+                <svg viewBox="0 0 320 200" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="vwSky" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#0B0014" />
+                      <stop offset="35%" stopColor="#1A0033" />
+                      <stop offset="65%" stopColor="#3D1466" />
+                      <stop offset="82%" stopColor="#FF2D7C" />
+                      <stop offset="95%" stopColor="#FF8B3D" />
+                      <stop offset="100%" stopColor="#FFE15A" />
+                    </linearGradient>
+                    <linearGradient id="vwSun" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#FFE15A" />
+                      <stop offset="55%" stopColor="#FF8B3D" />
+                      <stop offset="100%" stopColor="#FF2D7C" />
+                    </linearGradient>
+                  </defs>
+                  <rect width="320" height="200" fill="url(#vwSky)" />
+                  <circle cx="160" cy="105" r="55" fill="url(#vwSun)" opacity="0.95" />
+                  <g fill="#0B0014" opacity="0.9">
+                    <rect x="100" y="92" width="120" height="5" />
+                    <rect x="105" y="108" width="110" height="5" />
+                    <rect x="115" y="124" width="90" height="5" />
+                  </g>
+                  <path d="M0 200 L320 200 L320 150 Q160 130 0 150 Z" fill="#0B0014" opacity="0.7" />
+                  <g stroke="rgba(0,240,255,0.7)" strokeWidth="1" fill="none">
+                    <line x1="0" y1="155" x2="320" y2="155" />
+                    <line x1="0" y1="168" x2="320" y2="168" />
+                    <line x1="0" y1="183" x2="320" y2="183" />
+                    <line x1="40" y1="150" x2="-20" y2="200" />
+                    <line x1="120" y1="150" x2="80" y2="200" />
+                    <line x1="200" y1="150" x2="240" y2="200" />
+                    <line x1="280" y1="150" x2="340" y2="200" />
+                  </g>
+                  <path d="M20 200 Q25 170 10 160 Q30 165 35 200 Z" fill="#0B0014" opacity="0.9" />
+                  <path d="M300 200 Q295 165 315 155 Q290 165 285 200 Z" fill="#0B0014" opacity="0.9" />
+                </svg>
               </div>
-              <div className="chooser-body" style={{ background: "linear-gradient(135deg, #1A0033 0%, #2D1B4E 100%)", color: "#FFE5F1" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
-                  <h2 style={{ color: "#00FFFF", textShadow: "0 0 8px rgba(0, 255, 255, 0.6)", fontSize: "18px" }}>VAPORWAVE</h2>
-                  <span style={{ fontSize: "12px", color: "#FF6B9D", textShadow: "0 0 6px rgba(255, 107, 157, 0.5)" }}> vapor wave </span>
+              <div className="chooser-body">
+                <div className="flex items-center justify-between mb-1.5">
+                  <h2 className="text-lg">VAPORWAVE</h2>
+                  <span className="vaporwave-jp text-xs">審美的</span>
                 </div>
-                <p style={{ color: "#FFC2DD", fontSize: "12px" }}>Sunset gradients, perspective grid, and pink-tinted VHS scanlines. DX7 pads, gated reverb drums, chorused leads, and 80s string machine sounds.</p>
-                <div className="chooser-cta" style={{ color: "#00FFFF", textShadow: "0 0 8px rgba(0, 255, 255, 0.6)" }}>▶ ENTER</div>
+                <p>Chrome sunset UI, retro grid horizon, palm silhouettes and VHS tracking. Lush DX7 pads, Juno choruses, gated reverb snares and 80s Linn drums.</p>
+                <div className="chooser-cta">▶ ENTER</div>
               </div>
             </button>
           </div>
@@ -2216,13 +2243,13 @@ export default function ChordGenerator() {
                         ) : uiMode === "vw" ? (
                           <>
                             <option value="dx7pad">DX7 Pad</option>
-                            <option value="chorusLead">Chorus</option>
+                            <option value="chorusLead">Juno Pad</option>
                             <option value="dxBell">DX Bell</option>
                             <option value="brassStab">Brass</option>
                             <option value="dxPluck">DX Pluck</option>
-                            <option value="vhsKeys">VHS Kys</option>
-                            <option value="synthBass">Bass</option>
-                            <option value="strings">Strng</option>
+                            <option value="vhsKeys">E.Piano</option>
+                            <option value="synthBass">Slap Bass</option>
+                            <option value="strings">Strings</option>
                           </>
                         ) : (
                           <>
